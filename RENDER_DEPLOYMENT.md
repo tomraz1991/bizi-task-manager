@@ -39,7 +39,7 @@ You’ll deploy the **backend first**, then the **frontend** (so the frontend ca
    |-----------------|----------------|
    | `PYTHON_VERSION` | `3.11.11` (avoids 3.13 build issues) |
    | `DATABASE_URL`  | See [Step 2b](#step-2b-database) |
-   | `CORS_ORIGINS`  | Leave as `*` for now; after frontend is live, set to your frontend URL, e.g. `https://podcast-task-manager.onrender.com` |
+   | `CORS_ORIGINS`  | **Required for frontend.** Set to your frontend URL exactly, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash). You can add this after the frontend is created; until then use `*` to allow all origins (then lock to your frontend URL in Step 4). |
 
    For Google Calendar (optional):
 
@@ -59,15 +59,7 @@ You’ll deploy the **backend first**, then the **frontend** (so the frontend ca
 - **Option A – Render PostgreSQL:** In the same Render account, create a **PostgreSQL** instance, then copy the **Internal Database URL** (or External if you prefer) into `DATABASE_URL` for the backend.
 - **Option B – SQLite (not recommended for production):** You can omit `DATABASE_URL` to use the default SQLite path. Note: on free tier the filesystem can be ephemeral; use PostgreSQL for real data.
 
-After the first deploy, run migrations once (Render Shell or a one-off job):
-
-```bash
-cd backend
-pip install -r requirements.txt
-python migrate_db.py
-python migrate_workflow_fields.py
-python init_db.py
-```
+**Migrations:** You do **not** need to run migrations or use Render Shell. On each deploy the app runs `init_db()` at startup, which creates all tables from the current models. A new PostgreSQL database will have the correct schema as soon as the backend starts.
 
 ---
 
@@ -94,13 +86,15 @@ python init_db.py
 
 ---
 
-## Step 4: Lock CORS to your frontend (recommended)
+## Step 4: Fix CORS (required for frontend to work)
 
-After the frontend is live:
+If the frontend gets a CORS error when calling the API:
 
-1. Open the **backend** Web Service → **Environment**.
-2. Set `CORS_ORIGINS` to your frontend URL only, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash).
-3. Save and redeploy the backend if needed.
+1. Open the **backend** Web Service on Render → **Environment**.
+2. Set `CORS_ORIGINS` to your **frontend** URL exactly, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash, same URL you see in the browser for the app).
+3. Save and redeploy the backend.
+
+If you had set `CORS_ORIGINS` to `*`, the backend allows all origins but without credentials. For a specific frontend URL, set it explicitly so credentials work if needed.
 
 ---
 
@@ -131,9 +125,10 @@ The Blueprint does not know the backend URL in advance, so `VITE_API_BASE_URL` m
 |-------|------------|
 | Backend build fails (Rust / maturin / read-only) | Set `PYTHON_VERSION=3.11.11` and ensure Root Directory is `backend`. |
 | Frontend 404 on refresh / direct URL | Render Static Site serves `index.html` for routes; if you see 404, check Publish Directory is `dist` and build succeeded. |
-| API requests fail (CORS / network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api` and `CORS_ORIGINS` on backend to `https://<frontend>.onrender.com`. |
+| **CORS error** in browser | In Render → Backend → Environment, set `CORS_ORIGINS` to your frontend URL exactly (e.g. `https://podcast-task-manager.onrender.com`), no trailing slash. Save and redeploy the backend. |
+| API requests fail (network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api` and ensure `CORS_ORIGINS` on backend includes your frontend URL. |
 | **npm E401 / "Sonatype Nexus Repository Manager"** | Your `package-lock.json` had `resolved` URLs pointing at a private registry. The repo lockfile is now using the public registry. If you still see this, set **Build Command** to `npm install --registry https://registry.npmjs.org/ && npm run build`. |
-| Database empty after deploy | Run `migrate_db.py`, `migrate_workflow_fields.py`, and `init_db.py` once (Render Shell or one-off job). |
+| Database empty / tables missing | The app creates tables on startup via `init_db()`. Ensure `DATABASE_URL` is set and the backend has started at least once. |
 
 ---
 

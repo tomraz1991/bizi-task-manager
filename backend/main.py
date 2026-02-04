@@ -28,12 +28,20 @@ async def startup_event():
 
 # CORS middleware for frontend
 from config import settings
-CORS_ORIGINS = settings.CORS_ORIGINS.split(",")
+
+_raw = (settings.CORS_ORIGINS or "").strip()
+if _raw == "*" or not _raw:
+    # Allow all origins when unset or explicitly "*" (credentials must be False with "*")
+    CORS_ORIGINS = ["*"]
+    CORS_CREDENTIALS = False
+else:
+    CORS_ORIGINS = [o.strip() for o in _raw.split(",") if o.strip()]
+    CORS_CREDENTIALS = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=CORS_CREDENTIALS,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
