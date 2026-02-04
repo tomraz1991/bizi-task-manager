@@ -86,9 +86,9 @@ python init_db.py
 
    | Key                  | Value |
    |----------------------|--------|
-   | `VITE_API_BASE_URL`  | `https://YOUR-BACKEND-URL.onrender.com/api` |
+   | `VITE_API_BASE_URL`  | Your backend URL; must end with `/api` (e.g. `https://podcast-task-manager-api.onrender.com/api`). If you set only the origin, the app will append `/api` for you. |
 
-   Replace `YOUR-BACKEND-URL` with the backend URL from Step 2 (e.g. `https://podcast-task-manager-api.onrender.com/api`).
+   Replace with your actual backend URL from Step 2.
 
 5. Click **Create Static Site**. Wait for the build to finish.
 

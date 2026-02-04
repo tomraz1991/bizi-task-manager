@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Get API base URL from environment variable or use default
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Get API base URL from environment variable or use default.
+// Ensure it ends with /api so paths like /import/csv become /api/import/csv.
+const raw = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = raw.endsWith('/api') ? raw : raw.replace(/\/?$/, '') + '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
