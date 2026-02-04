@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, AlertCircle, CheckCircle2, FileAudio, TrendingUp } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
-import { getEpisodes, getTasks, getUpcomingRecordings, Episode, Task } from '../api';
+import { getEpisodes, getTasks, getUpcomingRecordings, Episode } from '../api';
 import { format, formatDistanceToNow } from 'date-fns';
 import CSVImport from '../components/CSVImport';
 import { DEFAULT_NOTIFICATION_DAYS, MS_PER_DAY } from '../constants';

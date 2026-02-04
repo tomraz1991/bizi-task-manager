@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getNotifications, NotificationItem } from '../api';
-import { format } from 'date-fns';
 
 interface NotificationContextType {
   notifications: NotificationItem[];
