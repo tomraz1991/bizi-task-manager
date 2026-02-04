@@ -125,8 +125,9 @@ The Blueprint does not know the backend URL in advance, so `VITE_API_BASE_URL` m
 |-------|------------|
 | Backend build fails (Rust / maturin / read-only) | Set `PYTHON_VERSION=3.11.11` and ensure Root Directory is `backend`. |
 | Frontend 404 on refresh / direct URL | Render Static Site serves `index.html` for routes; if you see 404, check Publish Directory is `dist` and build succeeded. |
-| **CORS error** in browser | In Render → Backend → Environment, set `CORS_ORIGINS` to your frontend URL exactly (e.g. `https://podcast-task-manager.onrender.com`), no trailing slash. Save and redeploy the backend. |
-| API requests fail (network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api` and ensure `CORS_ORIGINS` on backend includes your frontend URL. |
+| **CORS error** / "No 'Access-Control-Allow-Origin' header" | Backend now allows any `https://*.onrender.com` origin. Redeploy the backend so the change is live. If you use a custom domain for the frontend, set `CORS_ORIGINS` on the backend to that URL (e.g. `https://bizi-task-manager-1.onrender.com`). |
+| **307 Temporary Redirect** then CORS | On free tier the backend can spin down; the first request may get a 307 from Render (no CORS headers). Wait a few seconds and refresh the page so the backend wakes up; the next request should succeed. |
+| API requests fail (network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api`. Backend allows `*.onrender.com` origins by default. |
 | **npm E401 / "Sonatype Nexus Repository Manager"** | Your `package-lock.json` had `resolved` URLs pointing at a private registry. The repo lockfile is now using the public registry. If you still see this, set **Build Command** to `npm install --registry https://registry.npmjs.org/ && npm run build`. |
 | Database empty / tables missing | The app creates tables on startup via `init_db()`. Ensure `DATABASE_URL` is set and the backend has started at least once. |
 

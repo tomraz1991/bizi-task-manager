@@ -34,13 +34,17 @@ if _raw == "*" or not _raw:
     # Allow all origins when unset or explicitly "*" (credentials must be False with "*")
     CORS_ORIGINS = ["*"]
     CORS_CREDENTIALS = False
+    CORS_ORIGIN_REGEX = None
 else:
     CORS_ORIGINS = [o.strip() for o in _raw.split(",") if o.strip()]
     CORS_CREDENTIALS = True
+    # Also allow any Render frontend (*.onrender.com) so previews and alternate frontend URLs work
+    CORS_ORIGIN_REGEX = r"https://[a-z0-9-]+\.onrender\.com"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=CORS_CREDENTIALS,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
