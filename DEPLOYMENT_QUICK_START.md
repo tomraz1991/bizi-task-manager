@@ -65,9 +65,9 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
 
 ## Recommended Hosting
 
-- **Backend**: Railway, Render, or DigitalOcean
-- **Frontend**: Vercel or Netlify
-- **Database**: PostgreSQL on same server or managed service
+- **Both on Render**: Backend (Web Service) + Frontend (Static Site) — see **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)**.
+- **Split**: Backend on Railway/Render/DigitalOcean; Frontend on Vercel or Netlify.
+- **Database**: PostgreSQL on same server or managed service (e.g. Render PostgreSQL).
 
 ## Security Checklist
 

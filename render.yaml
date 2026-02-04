@@ -1,0 +1,19 @@
+# Render Blueprint: Backend Web Service
+# See RENDER_DEPLOYMENT.md for creating BOTH backend and frontend on Render.
+# After creating from this Blueprint, set in Dashboard: DATABASE_URL, CORS_ORIGINS.
+# Then create the Frontend as a Static Site manually (same repo, rootDir: frontend, publish: dist, env: VITE_API_BASE_URL).
+
+services:
+  - type: web
+    name: podcast-task-manager-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false

@@ -214,12 +214,14 @@ docker-compose up -d
 
 ### Option 3: Cloud Platforms
 
-#### Railway
-1. Connect GitHub repository
-2. Set environment variables
-3. Deploy automatically
+#### Deploy both backend and frontend on Render
 
-#### Render
+To host **both** the API and the React app on Render, use the dedicated guide:
+
+- **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)** — step-by-step: backend Web Service + frontend Static Site, env vars, CORS, and optional Blueprint.
+
+#### Render (backend only)
+
 1. Create new **Web Service**
 2. Connect repository
 3. Set **Root Directory** to `backend` (so the service runs from the backend folder)
@@ -227,6 +229,11 @@ docker-compose up -d
 5. **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 6. **Python version:** Set environment variable `PYTHON_VERSION=3.11.11` (or add a `.python-version` file with `3.11` in the repo). This avoids Python 3.13, which can trigger Rust/maturin builds and "Read-only file system" errors.
 7. Add environment variables (DATABASE_URL, CORS_ORIGINS, etc.) in the Render dashboard
+
+#### Railway
+1. Connect GitHub repository
+2. Set environment variables
+3. Deploy automatically
 
 #### Heroku
 ```bash

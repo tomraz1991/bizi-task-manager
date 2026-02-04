@@ -273,6 +273,8 @@ TODO: Add test suite
 
 For production deployment, see [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive instructions.
 
+**Deploy both backend and frontend on Render:** see [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md).
+
 Quick start: See [DEPLOYMENT_QUICK_START.md](./DEPLOYMENT_QUICK_START.md)
 
 ## License
