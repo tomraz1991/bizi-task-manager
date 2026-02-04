@@ -18,12 +18,14 @@ A production-ready task management application for recording studios, designed t
 ## Tech Stack
 
 ### Backend
+
 - **FastAPI**: Modern Python web framework
 - **SQLAlchemy**: ORM for database operations
 - **SQLite**: Database (can be upgraded to PostgreSQL for production)
 - **Google Calendar API**: Automatic episode discovery and task creation
 
 ### Frontend
+
 - **React**: UI library
 - **TypeScript**: Type safety
 - **Tailwind CSS**: Styling
@@ -38,39 +40,48 @@ A production-ready task management application for recording studios, designed t
 **Important:** The backend server must be running before starting the frontend!
 
 1. Navigate to the backend directory:
+
 ```bash
 cd backend
 ```
 
 2. **Option A: Use the setup script (recommended):**
+
 ```bash
 bash setup.sh
 ```
 
 3. **Option B: Manual setup:**
+
    - Create a virtual environment:
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-   
+
    - Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
-   
+
    - Initialize the database:
+
    ```bash
    python init_db.py
    ```
 
 4. **Start the server:**
+
    - Make sure your virtual environment is activated:
+
    ```bash
    source venv/bin/activate
    ```
-   
+
    - Run the server (use `python3` or the venv's python explicitly):
+
    ```bash
    python3 main.py
    # OR
@@ -78,8 +89,9 @@ bash setup.sh
    # OR use the run script:
    bash run.sh
    ```
-   
+
    **If you get "ModuleNotFoundError" even after installing:**
+
    - Check which Python you're using: `which python` should show `.../venv/bin/python`
    - If not, use `python3` instead of `python`
    - Or explicitly use: `./venv/bin/python main.py`
@@ -88,6 +100,7 @@ The API will be available at `http://localhost:8000`
 API documentation at `http://localhost:8000/docs`
 
 **Troubleshooting:**
+
 - If you get `ModuleNotFoundError`, make sure you've activated the virtual environment (`source venv/bin/activate`)
 - If pip install fails, check your internet connection
 - Make sure you're using Python 3.9 or higher
@@ -97,16 +110,19 @@ API documentation at `http://localhost:8000/docs`
 **Make sure the backend is running first!** (See Backend Setup above)
 
 1. Navigate to the frontend directory:
+
 ```bash
 cd frontend
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -114,6 +130,7 @@ npm run dev
 The frontend will be available at `http://localhost:3000`
 
 **Alternative:** Use the startup script from the project root:
+
 ```bash
 ./start_frontend.sh
 # or
@@ -125,6 +142,7 @@ bash start_frontend.sh
 Open two terminal windows:
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd backend
 python3 -m venv venv
@@ -135,6 +153,7 @@ python main.py
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 cd frontend
 npm install
@@ -154,6 +173,7 @@ Then open `http://localhost:3000` in your browser.
 ### Notifications
 
 The app will request browser notification permissions on first load. Notifications will appear for:
+
 - Upcoming recording sessions (within 7 days)
 - Due tasks (within 7 days)
 - Overdue tasks
@@ -189,6 +209,7 @@ podcast-task-manager/
 ## API Endpoints
 
 ### Podcasts
+
 - `GET /api/podcasts` - List all podcasts
 - `GET /api/podcasts/{id}` - Get podcast details
 - `POST /api/podcasts` - Create podcast
@@ -196,6 +217,7 @@ podcast-task-manager/
 - `DELETE /api/podcasts/{id}` - Delete podcast
 
 ### Episodes
+
 - `GET /api/episodes` - List episodes (with filters)
 - `GET /api/episodes/{id}` - Get episode details
 - `GET /api/episodes/upcoming/recordings` - Get upcoming recordings
@@ -204,6 +226,7 @@ podcast-task-manager/
 - `DELETE /api/episodes/{id}` - Delete episode
 
 ### Tasks
+
 - `GET /api/tasks` - List tasks (with filters)
 - `GET /api/tasks/{id}` - Get task details
 - `GET /api/tasks/due/upcoming` - Get due tasks
@@ -213,6 +236,7 @@ podcast-task-manager/
 - `DELETE /api/tasks/{id}` - Delete task
 
 ### Users
+
 - `GET /api/users` - List users
 - `GET /api/users/{id}` - Get user details
 - `POST /api/users` - Create user
@@ -220,15 +244,18 @@ podcast-task-manager/
 - `DELETE /api/users/{id}` - Delete user
 
 ### Engineers
+
 - `GET /api/engineers` - Get summary of all engineers with assignment counts
 - `GET /api/engineers/{engineer_id}/episodes` - Get episodes assigned to an engineer (filter by role)
 - `GET /api/engineers/{engineer_id}/upcoming` - Get upcoming recordings for an engineer
 - `GET /api/engineers/{engineer_id}/tasks` - Get all tasks and episode assignments for an engineer
 
 ### Notifications
+
 - `GET /api/notifications` - Get all notifications
 
 ### Import
+
 - `POST /api/import/csv` - Import data from CSV (maps engineers to episode-level assignments)
 
 ## Development
@@ -251,4 +278,5 @@ Quick start: See [DEPLOYMENT_QUICK_START.md](./DEPLOYMENT_QUICK_START.md)
 ## License
 
 MIT
+
 # bizi-task-manager
