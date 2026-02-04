@@ -280,5 +280,3 @@ Quick start: See [DEPLOYMENT_QUICK_START.md](./DEPLOYMENT_QUICK_START.md)
 ## License
 
 MIT
-
-# bizi-task-manager

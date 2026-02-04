@@ -230,22 +230,6 @@ To host **both** the API and the React app on Render, use the dedicated guide:
 6. **Python version:** Set environment variable `PYTHON_VERSION=3.11.11` (or add a `.python-version` file with `3.11` in the repo). This avoids Python 3.13, which can trigger Rust/maturin builds and "Read-only file system" errors.
 7. Add environment variables (DATABASE_URL, CORS_ORIGINS, etc.) in the Render dashboard
 
-#### Railway
-1. Connect GitHub repository
-2. Set environment variables
-3. Deploy automatically
-
-#### Heroku
-```bash
-# Create Procfile in backend/
-web: uvicorn main:app --host 0.0.0.0 --port $PORT
-
-# Deploy
-heroku create podcast-task-manager-api
-heroku addons:create heroku-postgresql:hobby-dev
-git push heroku main
-```
-
 ## Frontend Deployment
 
 ### Option 1: Static Hosting (Recommended)
@@ -260,26 +244,11 @@ npm run build
 
 This creates a `dist/` folder with optimized production files.
 
-#### Deploy to Various Platforms
+#### Deploy to Render
 
-**Vercel:**
-```bash
-npm install -g vercel
-vercel --prod
-```
+See **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)** for deploying both backend and frontend on Render (recommended).
 
-**Netlify:**
-```bash
-npm install -g netlify-cli
-netlify deploy --prod
-```
-
-**Cloudflare Pages:**
-- Connect GitHub repository
-- Build command: `npm run build`
-- Build output: `dist`
-
-**Nginx Static Hosting:**
+#### Other options: Nginx static hosting
 ```nginx
 server {
     listen 80;
@@ -447,9 +416,8 @@ sudo ufw enable
 - **Vultr**: $6-12/month
 
 ### Managed Services
-- **Railway**: Pay-as-you-go
-- **Render**: Free tier available
-- **Fly.io**: Generous free tier
+- **Render** (recommended): Backend + frontend; see [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md). Free tier available.
+- **Railway**, **Fly.io**: Alternative backends.
 
 ### Enterprise
 - **AWS**: EC2 + RDS + CloudFront

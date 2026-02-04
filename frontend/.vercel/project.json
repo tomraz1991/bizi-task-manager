@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_VO0LcZlQgQp8BNHnj3AucfiX6VUC",
+  "orgId": "team_AeCZp8ArcBd3sUJqqlxQlNTo",
+  "projectName": "bizi-task-manager",
+  "settings": {
+    "createdAt": 1770197722089,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

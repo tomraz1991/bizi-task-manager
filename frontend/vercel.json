@@ -1,6 +1,0 @@
-{
-  "installCommand": "npm install --registry https://registry.npmjs.org/",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}

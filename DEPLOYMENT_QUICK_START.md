@@ -4,10 +4,10 @@
 
 ### 1. Backend (5 minutes)
 
-**Using Railway/Render (Easiest):**
+**Using Render (recommended):**
 1. Push code to GitHub
-2. Connect repository to Railway/Render
-3. Set environment variables
+2. Follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) to create backend and frontend
+3. Set environment variables in the Render dashboard
 4. Deploy
 
 **Using VPS:**
@@ -31,7 +31,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 cd frontend
 npm install
 npm run build
-# Upload dist/ folder to hosting (Vercel, Netlify, etc.)
+# Deploy to Render (see RENDER_DEPLOYMENT.md) or upload dist/ to any static host
 ```
 
 ### 3. Environment Variables
@@ -65,9 +65,8 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
 
 ## Recommended Hosting
 
-- **Both on Render**: Backend (Web Service) + Frontend (Static Site) — see **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)**.
-- **Split**: Backend on Railway/Render/DigitalOcean; Frontend on Vercel or Netlify.
-- **Database**: PostgreSQL on same server or managed service (e.g. Render PostgreSQL).
+- **Render** (recommended): Backend (Web Service) + Frontend (Static Site) — see **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)**.
+- **Database**: Render PostgreSQL or another managed PostgreSQL.
 
 ## Security Checklist
 
