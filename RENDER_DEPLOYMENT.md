@@ -105,6 +105,50 @@ If you had set `CORS_ORIGINS` to `*`, the backend allows all origins but without
 
 ---
 
+## Fix 404 when refreshing a page (e.g. /episodes)
+
+The app is a Single Page Application (SPA): routes like `/episodes` are handled by React Router in the browser. When you **refresh** or open `https://your-frontend.onrender.com/episodes` directly, the server receives a request for `/episodes` and has no file at that path, so it returns 404.
+
+**Fix:** Tell Render to serve `index.html` for all paths so the SPA can load and React Router can handle the route.
+
+1. In **Render Dashboard** → your **frontend** Static Site.
+2. Open **Redirects / Rewrites** (in the left sidebar or under Settings).
+3. Add a **Rewrite** rule:
+   - **Source:** `/*`
+   - **Destination:** `/index.html`
+   - **Action:** Rewrite (not Redirect)
+4. Save. New deploys will use this; you may not need to redeploy.
+
+After this, refreshing `https://bizi-task-manager-1.onrender.com/episodes` (or any route) will serve the app and the correct page will show.
+
+---
+
+## Clear database (PostgreSQL)
+
+To **delete all data** in your Render PostgreSQL database (tables stay, data is removed):
+
+1. **Get the connection URL**  
+   In Render Dashboard → your **PostgreSQL** service → **Connect** → copy **External Database URL** (e.g. `postgresql://user:pass@dpg-xxx-a.oregon-postgres.render.com/dbname`).
+
+2. **Run the clear script from your machine** (same repo, backend folder). Use a virtualenv or install deps first:
+
+   ```bash
+   cd backend
+   python3 -m venv .venv
+   source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   DATABASE_URL="postgresql://user:pass@host/dbname" .venv/bin/python clear_db.py
+   ```
+   Use `.venv/bin/python` (or `python3` after activate) so the script runs with the venv that has the dependencies.
+
+   Paste your actual External Database URL in place of `"postgresql://..."`.  
+   If the URL points at Render, the script will ask you to type `yes` before clearing.
+
+3. **Result**  
+   All rows in `tasks`, `episodes`, `podcasts`, and `users` are deleted. You can import a CSV again from the app.
+
+---
+
 ## Optional: Blueprint (render.yaml)
 
 You can define both services in a single **Blueprint** so Render creates them from the repo.
@@ -124,7 +168,7 @@ The Blueprint does not know the backend URL in advance, so `VITE_API_BASE_URL` m
 | Issue | What to do |
 |-------|------------|
 | Backend build fails (Rust / maturin / read-only) | Set `PYTHON_VERSION=3.11.11` and ensure Root Directory is `backend`. |
-| Frontend 404 on refresh / direct URL | Render Static Site serves `index.html` for routes; if you see 404, check Publish Directory is `dist` and build succeeded. |
+| **404 when refreshing** a route (e.g. /episodes) | Add a **Rewrite** in Render → Frontend → Redirects/Rewrites: Source `/*`, Destination `/index.html`, type Rewrite. See [Fix 404 when refreshing](#fix-404-when-refreshing-a-page-eg-episodes). |
 | **CORS error** / "No 'Access-Control-Allow-Origin' header" | Backend now allows any `https://*.onrender.com` origin. Redeploy the backend so the change is live. If you use a custom domain for the frontend, set `CORS_ORIGINS` on the backend to that URL (e.g. `https://bizi-task-manager-1.onrender.com`). |
 | **307 Temporary Redirect** then CORS | On free tier the backend can spin down; the first request may get a 307 from Render (no CORS headers). Wait a few seconds and refresh the page so the backend wakes up; the next request should succeed. |
 | API requests fail (network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api`. Backend allows `*.onrender.com` origins by default. |

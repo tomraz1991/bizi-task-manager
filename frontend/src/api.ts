@@ -17,6 +17,7 @@ export interface Podcast {
   name: string;
   host?: string;
   default_studio_settings?: string;
+  tasks_time_allowance_days?: string;  // e.g. "7", "3 days", "1 week"
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +34,7 @@ export interface Episode {
   drive_link?: string;
   backup_deletion_date?: string;
   card_name?: string;
+  memory_card?: string;
   recording_engineer_id?: string;
   editing_engineer_id?: string;
   reels_engineer_id?: string;

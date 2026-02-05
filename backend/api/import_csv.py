@@ -134,6 +134,7 @@ async def import_csv_file(
                     status_str = row.get("סטטוס", "").strip()
                     episode_notes = get_csv_value(row, "הערות לפרק").strip()
                     card_name = get_csv_value(row, "על איזה כרטיס").strip()
+                    memory_card = get_csv_value(row, "Memory Card", "כרטיס זיכרון", "memory_card").strip()
                     # Handle trailing spaces in CSV headers
                     recording_person = get_csv_value(row, "הקלטה").strip()
                     editing_person = get_csv_value(row, "עריכה").strip()
@@ -195,6 +196,7 @@ async def import_csv_file(
                         drive_link=drive_link if drive_link else None,
                         backup_deletion_date=backup_deletion_date,
                         card_name=card_name if card_name else None,
+                        memory_card=memory_card if memory_card else None,
                         recording_engineer_id=recording_engineer_id,
                         editing_engineer_id=editing_engineer_id,
                         reels_engineer_id=reels_engineer_id,

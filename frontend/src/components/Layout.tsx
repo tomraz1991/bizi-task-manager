@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { Home, FileAudio, CheckSquare, Bell, Users, X } from 'lucide-react';
+import { Home, FileAudio, CheckSquare, Bell, Users, X, Radio } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -21,6 +21,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/episodes', label: 'Episodes', icon: FileAudio },
     { path: '/tasks', label: 'Tasks', icon: CheckSquare },
     { path: '/engineers', label: 'Engineers', icon: Users },
+    { path: '/podcasts', label: 'Podcasts', icon: Radio },
   ];
 
   // Close dropdown when clicking outside

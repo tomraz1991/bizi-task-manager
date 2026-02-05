@@ -205,6 +205,9 @@ export default function Episodes() {
                   Studio
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Memory Card
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Guests
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -221,7 +224,7 @@ export default function Episodes() {
             <tbody className="bg-white/50 divide-y divide-gray-200/50">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                       <span className="ml-3">Loading episodes...</span>
@@ -230,7 +233,7 @@ export default function Episodes() {
                 </tr>
               ) : filteredEpisodes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     No episodes found
                   </td>
                 </tr>
@@ -248,6 +251,9 @@ export default function Episodes() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {episode.studio || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {episode.memory_card || '—'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {episode.guest_names || 'N/A'}

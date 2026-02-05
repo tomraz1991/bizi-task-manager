@@ -50,6 +50,7 @@ class Podcast(Base):
     name = Column(String, nullable=False, index=True)
     host = Column(String, nullable=True)
     default_studio_settings = Column(Text, nullable=True)  # Default studio setup (e.g., "two mics, two cameras one in front of the other")
+    tasks_time_allowance_days = Column(String, nullable=True)  # How long engineers have to complete all tasks (e.g. "7", "3 days", "1 week")
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -71,6 +72,7 @@ class Episode(Base):
     drive_link = Column(String, nullable=True)
     backup_deletion_date = Column(DateTime, nullable=True)
     card_name = Column(String, nullable=True, index=True)
+    memory_card = Column(String, nullable=True)  # Which memory card stores recordings (e.g. "kingstone 1", "WD 500G")
     recording_engineer_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     editing_engineer_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     reels_engineer_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)

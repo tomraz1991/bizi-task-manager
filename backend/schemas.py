@@ -11,6 +11,7 @@ class PodcastBase(BaseModel):
     name: str
     host: Optional[str] = None
     default_studio_settings: Optional[str] = None
+    tasks_time_allowance_days: Optional[str] = None  # e.g. "7", "3 days", "1 week"
 
 
 class PodcastCreate(PodcastBase):
@@ -21,6 +22,7 @@ class PodcastUpdate(BaseModel):
     name: Optional[str] = None
     host: Optional[str] = None
     default_studio_settings: Optional[str] = None
+    tasks_time_allowance_days: Optional[str] = None
 
 
 class Podcast(PodcastBase):
@@ -43,6 +45,7 @@ class EpisodeBase(BaseModel):
     drive_link: Optional[str] = None
     backup_deletion_date: Optional[datetime] = None
     card_name: Optional[str] = None
+    memory_card: Optional[str] = None
     recording_engineer_id: Optional[str] = None
     editing_engineer_id: Optional[str] = None
     reels_engineer_id: Optional[str] = None
@@ -67,6 +70,7 @@ class EpisodeUpdate(BaseModel):
     drive_link: Optional[str] = None
     backup_deletion_date: Optional[datetime] = None
     card_name: Optional[str] = None
+    memory_card: Optional[str] = None
     recording_engineer_id: Optional[str] = None
     editing_engineer_id: Optional[str] = None
     reels_engineer_id: Optional[str] = None

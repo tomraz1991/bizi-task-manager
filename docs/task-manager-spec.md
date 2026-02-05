@@ -15,6 +15,8 @@ A podcast show with multiple episodes.
 - `id`: Unique identifier
 - `name`: Podcast name (e.g., "רוני וברק", "סטימצקי", "אפרת וכטל")
 - `host`: Primary host name (optional, e.g., "אבי זייתן")
+- `default_studio_settings`: Default studio setup for episodes (optional)
+- `tasks_time_allowance_days`: How long engineers have to complete all tasks for an episode of this podcast (optional, e.g. "7", "3 days", "1 week")
 - `created_at`: Creation timestamp
 - `updated_at`: Last update timestamp
 

@@ -23,6 +23,7 @@ export default function EpisodeModal({ episode, isOpen, onClose, onSave }: Episo
     episode_notes: '',
     drive_link: '',
     card_name: '',
+    memory_card: '',
     recording_engineer_id: '',
     editing_engineer_id: '',
     reels_engineer_id: '',
@@ -51,6 +52,7 @@ export default function EpisodeModal({ episode, isOpen, onClose, onSave }: Episo
           episode_notes: episode.episode_notes || '',
           drive_link: episode.drive_link || '',
           card_name: episode.card_name || '',
+          memory_card: episode.memory_card || '',
           recording_engineer_id: episode.recording_engineer_id || '',
           editing_engineer_id: episode.editing_engineer_id || '',
           reels_engineer_id: episode.reels_engineer_id || '',
@@ -71,6 +73,7 @@ export default function EpisodeModal({ episode, isOpen, onClose, onSave }: Episo
           episode_notes: '',
           drive_link: '',
           card_name: '',
+          memory_card: '',
           recording_engineer_id: '',
           editing_engineer_id: '',
           reels_engineer_id: '',
@@ -265,6 +268,19 @@ export default function EpisodeModal({ episode, isOpen, onClose, onSave }: Episo
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Memory Card
+            </label>
+            <input
+              type="text"
+              value={formData.memory_card}
+              onChange={(e) => setFormData({ ...formData, memory_card: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all bg-white"
+              placeholder="e.g., kingstone 1, kingstone 2, WD 500G, WD 1000G"
+            />
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -346,13 +362,25 @@ export default function EpisodeModal({ episode, isOpen, onClose, onSave }: Episo
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Studio Settings</h3>
             
             {formData.podcast_id && (
-              <div className="mb-3 p-3 bg-gray-50 rounded-md">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Default Studio Settings (from Podcast)
-                </label>
-                <p className="text-sm text-gray-700">
-                  {podcasts.find(p => p.id === formData.podcast_id)?.default_studio_settings || 'No default settings'}
-                </p>
+              <div className="space-y-3 mb-3">
+                <div className="p-3 bg-gray-50 rounded-md">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Default Studio Settings (from Podcast)
+                  </label>
+                  <p className="text-sm text-gray-700">
+                    {podcasts.find(p => p.id === formData.podcast_id)?.default_studio_settings || 'No default settings'}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-md">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Tasks Time Allowance (from Podcast)
+                  </label>
+                  <p className="text-sm text-gray-700">
+                    {podcasts.find(p => p.id === formData.podcast_id)?.tasks_time_allowance_days
+                      ? `${podcasts.find(p => p.id === formData.podcast_id)?.tasks_time_allowance_days}`
+                      : 'Not set'}
+                  </p>
+                </div>
               </div>
             )}
 
