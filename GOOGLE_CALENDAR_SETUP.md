@@ -170,15 +170,44 @@ You can also store metadata in event extended properties:
 
 ## Production Deployment
 
-1. **Store credentials securely:**
-   - Use environment variables or secret management service
-   - Never commit credentials to git
-   - Use different service account for production
+### Adding the credentials JSON key on Render (or similar)
 
-2. **Set up scheduled sync:**
-   - Use cron job or scheduled task
-   - Call `/api/workflow/daily` each morning
-   - Optionally call `/api/workflow/sync-calendar` periodically
+You have **two options**; use one of them.
+
+#### Option A: Secret File (recommended on Render)
+
+1. In **Render Dashboard** → your **backend** Web Service → **Environment**.
+2. Scroll to **Secret Files**.
+3. Click **Add Secret File**.
+4. **Filename:** `google-service-account.json` (or any name you like).
+5. **Contents:** Paste the **entire** contents of your downloaded Google service account JSON key file.
+6. Save. Render mounts secret files at `/etc/secrets/` at runtime.
+7. Add an **environment variable**:
+   - Key: `GOOGLE_CREDENTIALS_PATH`
+   - Value: `/etc/secrets/google-service-account.json` (match the filename you used).
+8. Set `GOOGLE_CALENDAR_ENABLED=true` and any other Google Calendar env vars. Redeploy the backend.
+
+#### Option B: Environment variable (JSON string)
+
+1. Open your downloaded service account JSON file and copy its **entire** contents (one line or pretty-printed).
+2. In **Render Dashboard** → backend → **Environment** → **Add Environment Variable**.
+3. Key: `GOOGLE_CREDENTIALS_JSON`
+4. Value: Paste the full JSON (as a single line; Render accepts multiline, but avoid extra quotes/escaping).
+5. Set `GOOGLE_CALENDAR_ENABLED=true`. Do **not** set `GOOGLE_CREDENTIALS_PATH` when using this option.
+6. Save and redeploy.
+
+The app uses `GOOGLE_CREDENTIALS_JSON` if set; otherwise it uses `GOOGLE_CREDENTIALS_PATH` to load from a file.
+
+**Important:** Never commit the JSON key to git. Locally, keep it in `backend/credentials/` and ensure `credentials/` is in `.gitignore`.
+
+### Set up scheduled sync (required for automatic import)
+
+   The app does **not** poll Google Calendar by itself. You must call the workflow endpoints on a schedule:
+
+   - **Daily:** Call `POST /api/workflow/daily` each morning (e.g. 8 AM). This processes today’s episodes and creates studio preparation tasks.
+   - **Optional:** Call `POST /api/workflow/sync-calendar?days_ahead=7` periodically to import/update upcoming events into the database.
+
+   **On Render:** Add a [Cron Job or external cron](RENDER_DEPLOYMENT.md#google-calendar-run-daily-import-cron) that POSTs to your backend URL. See RENDER_DEPLOYMENT.md for step-by-step options.
 
 3. **Monitor logs:**
    - Check for authentication errors

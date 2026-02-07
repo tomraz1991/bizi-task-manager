@@ -37,6 +37,9 @@ build/
 .env
 .env.local
 
+# Google credentials (never commit)
+backend/credentials/
+
 # OS
 .DS_Store
 Thumbs.db

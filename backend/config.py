@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     GOOGLE_CALENDAR_ENABLED: bool = False
     GOOGLE_CALENDAR_ID: str = "primary"
     GOOGLE_CREDENTIALS_PATH: Optional[str] = None
+    GOOGLE_CREDENTIALS_JSON: Optional[str] = None  # Alternative: full JSON key as string (e.g. on Render)
     GOOGLE_SERVICE_ACCOUNT_EMAIL: Optional[str] = None
     GOOGLE_CALENDAR_TIMEZONE: str = "Asia/Jerusalem"
     GOOGLE_CALENDAR_LOOKAHEAD_DAYS: int = 7

@@ -1,6 +1,7 @@
 """
 Google Calendar integration service.
 """
+import json
 import logging
 import re
 from datetime import datetime, timezone, timedelta
@@ -39,21 +40,36 @@ def get_calendar_service():
     if not settings.GOOGLE_CALENDAR_ENABLED:
         logger.debug("Google Calendar integration is disabled")
         return None
-    
-    if not settings.GOOGLE_CREDENTIALS_PATH:
-        logger.warning("GOOGLE_CREDENTIALS_PATH not configured")
+
+    credentials = None
+    if settings.GOOGLE_CREDENTIALS_JSON:
+        try:
+            info = json.loads(settings.GOOGLE_CREDENTIALS_JSON)
+            credentials = service_account.Credentials.from_service_account_info(
+                info,
+                scopes=['https://www.googleapis.com/auth/calendar.readonly']
+            )
+        except Exception as e:
+            logger.error(f"Failed to parse GOOGLE_CREDENTIALS_JSON: {e}", exc_info=True)
+            return None
+    elif settings.GOOGLE_CREDENTIALS_PATH:
+        credentials_path = Path(settings.GOOGLE_CREDENTIALS_PATH)
+        if not credentials_path.exists():
+            logger.error(f"Google credentials file not found: {credentials_path}")
+            return None
+        try:
+            credentials = service_account.Credentials.from_service_account_file(
+                str(credentials_path),
+                scopes=['https://www.googleapis.com/auth/calendar.readonly']
+            )
+        except Exception as e:
+            logger.error(f"Failed to load credentials from file: {e}", exc_info=True)
+            return None
+    else:
+        logger.warning("Neither GOOGLE_CREDENTIALS_JSON nor GOOGLE_CREDENTIALS_PATH configured")
         return None
-    
-    credentials_path = Path(settings.GOOGLE_CREDENTIALS_PATH)
-    if not credentials_path.exists():
-        logger.error(f"Google credentials file not found: {credentials_path}")
-        return None
-    
+
     try:
-        credentials = service_account.Credentials.from_service_account_file(
-            str(credentials_path),
-            scopes=['https://www.googleapis.com/auth/calendar.readonly']
-        )
         service = build('calendar', 'v3', credentials=credentials)
         logger.info("Google Calendar service initialized successfully")
         return service

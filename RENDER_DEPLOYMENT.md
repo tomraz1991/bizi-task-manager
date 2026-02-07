@@ -41,13 +41,14 @@ You’ll deploy the **backend first**, then the **frontend** (so the frontend ca
    | `DATABASE_URL`  | See [Step 2b](#step-2b-database) |
    | `CORS_ORIGINS`  | **Required for frontend.** Set to your frontend URL exactly, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash). You can add this after the frontend is created; until then use `*` to allow all origins (then lock to your frontend URL in Step 4). |
 
-   For Google Calendar (optional):
+   For Google Calendar (optional): see **[GOOGLE_CALENDAR_SETUP.md](GOOGLE_CALENDAR_SETUP.md)** for how to add the credentials JSON in production. Use either a **Secret File** (path `/etc/secrets/google-service-account.json`) and set `GOOGLE_CREDENTIALS_PATH` to that path, or set **`GOOGLE_CREDENTIALS_JSON`** to the full JSON string.
 
    | Key                         | Value |
    |-----------------------------|--------|
    | `GOOGLE_CALENDAR_ENABLED`   | `true` |
    | `GOOGLE_CALENDAR_ID`        | your calendar id |
-   | `GOOGLE_CREDENTIALS_PATH`   | path to JSON (or use secret file / env JSON) |
+   | `GOOGLE_CREDENTIALS_PATH`   | `/etc/secrets/google-service-account.json` (if using Secret File) |
+   | or `GOOGLE_CREDENTIALS_JSON` | full JSON key as string (alternative) |
    | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | service account email |
    | `GOOGLE_CALENDAR_TIMEZONE`  | e.g. `Asia/Jerusalem` |
 
@@ -102,6 +103,44 @@ If you had set `CORS_ORIGINS` to `*`, the backend allows all origins but without
 
 - Open the **frontend** URL (e.g. `https://podcast-task-manager.onrender.com`). You should see the app.
 - Use the UI to create/edit data; it should hit the backend. Check Network tab: requests go to `https://podcast-task-manager-api.onrender.com/api/...`.
+
+---
+
+## Google Calendar: run daily import (cron)
+
+If you use Google Calendar integration, the app does **not** fetch the calendar by itself. You need to **call the workflow endpoints on a schedule** so that:
+
+1. **Daily workflow** – today’s episodes are processed and studio preparation tasks are created.
+2. **Calendar sync** (optional) – upcoming events are imported/updated in the database.
+
+**Yes, you should add a scheduled job** (cron) that hits your backend. Two ways to do it:
+
+### Option A: Render Cron Job
+
+1. In **Render Dashboard** → **New** → **Cron Job**.
+2. Connect the **same** repo.
+3. **Root Directory:** set to **`backend`**. (Required so the build finds `requirements.txt`; otherwise you get "Could not open requirements file".)
+4. **Build Command:** `pip install -r requirements.txt` (or leave default – it runs from `backend/` when Root Directory is set).
+5. **Schedule:** e.g. `0 8 * * *` (daily at 08:00 **UTC**). Adjust for your timezone (e.g. Israel: 08:00 local ≈ 05:00 UTC in winter, 06:00 UTC in summer).
+6. **Command** (the command that runs on each cron run):
+   ```bash
+   curl -X POST https://YOUR-BACKEND.onrender.com/api/workflow/daily
+   ```
+   Replace `YOUR-BACKEND` with your backend service name (e.g. `bizi-task-manager`).
+7. (Optional) Add a second cron or a line in the same script to sync the calendar:
+   ```bash
+   curl -X POST "https://YOUR-BACKEND.onrender.com/api/workflow/sync-calendar?days_ahead=7"
+   ```
+8. Save. Render will run the job on the schedule (Cron Jobs are billed by run time).
+
+### Option B: External cron / ping service
+
+Use a free external service that calls a URL on a schedule:
+
+- **[cron-job.org](https://cron-job.org)** or **[EasyCron](https://www.easycron.com)** – create a job that does a **POST** to `https://YOUR-BACKEND.onrender.com/api/workflow/daily` once per day (e.g. 08:00 your time).
+- Optionally add a second job for `POST .../api/workflow/sync-calendar?days_ahead=7` (e.g. every 6 hours or daily).
+
+**Summary:** Without a cron (or manual calls), calendar events are never imported. Set up one of the options above so `/api/workflow/daily` (and optionally `/api/workflow/sync-calendar`) run on a schedule.
 
 ---
 
