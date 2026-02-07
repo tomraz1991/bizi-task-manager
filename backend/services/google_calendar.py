@@ -369,15 +369,16 @@ def get_todays_episodes_from_calendar(db: Session) -> List[Episode]:
     
     # Query calendar for today's events
     try:
-        # Get timezone-aware start and end of today
-        tz = settings.GOOGLE_CALENDAR_TIMEZONE
+        # UTC date range for today (RFC 3339 format; avoid double timezone suffix)
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
-        
-        # Format for Google Calendar API
-        time_min = today_start.isoformat() + 'Z'
-        time_max = today_end.isoformat() + 'Z'
+
+        def to_rfc3339_utc(dt):
+            return dt.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
+
+        time_min = to_rfc3339_utc(today_start)
+        time_max = to_rfc3339_utc(today_end)
         
         logger.info(f"Fetching calendar events from {time_min} to {time_max}")
         
@@ -387,7 +388,6 @@ def get_todays_episodes_from_calendar(db: Session) -> List[Episode]:
             timeMax=time_max,
             singleEvents=True,
             orderBy='startTime',
-            timeZone=tz
         ).execute()
         
         events = events_result.get('items', [])
@@ -473,11 +473,15 @@ def sync_calendar_to_database(db: Session, days_ahead: Optional[int] = None) -> 
     days_ahead = days_ahead or settings.GOOGLE_CALENDAR_LOOKAHEAD_DAYS
     
     try:
-        # Calculate date range
-        tz = settings.GOOGLE_CALENDAR_TIMEZONE
+        # UTC date range, RFC 3339 format (avoid double timezone suffix)
         now = datetime.now(timezone.utc)
-        time_min = now.isoformat() + 'Z'
-        time_max = (now + timedelta(days=days_ahead)).isoformat() + 'Z'
+        end = now + timedelta(days=days_ahead)
+
+        def to_rfc3339_utc(dt):
+            return dt.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
+
+        time_min = to_rfc3339_utc(now)
+        time_max = to_rfc3339_utc(end)
         
         logger.info(f"Syncing calendar events from {time_min} to {time_max}")
         
@@ -487,7 +491,6 @@ def sync_calendar_to_database(db: Session, days_ahead: Optional[int] = None) -> 
             timeMax=time_max,
             singleEvents=True,
             orderBy='startTime',
-            timeZone=tz
         ).execute()
         
         events = events_result.get('items', [])

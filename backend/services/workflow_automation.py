@@ -33,9 +33,11 @@ def create_studio_preparation_task(db: Session, episode: Episode) -> Optional[Ta
     due_date = None
     if episode.recording_date:
         due_date = episode.recording_date - timedelta(hours=1)
-        # If due date is in the past, set to now
-        if due_date < datetime.now(timezone.utc):
-            due_date = datetime.now(timezone.utc)
+        # If due date is in the past, set to now (use naive UTC to match DB datetimes)
+        now_utc = datetime.now(timezone.utc)
+        now_compare = now_utc.replace(tzinfo=None) if (due_date.tzinfo is None) else now_utc
+        if due_date < now_compare:
+            due_date = now_utc.replace(tzinfo=None) if (due_date.tzinfo is None) else now_utc
     
     task = Task(
         episode_id=episode.id,

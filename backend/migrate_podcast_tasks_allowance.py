@@ -12,7 +12,8 @@ def migrate():
             conn.commit()
             print("Added tasks_time_allowance_days column to podcasts table.")
         except Exception as e:
-            if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+            err = str(e).lower()
+            if "duplicate column" in err or "already exists" in err or "duplicate column name" in err:
                 print("Column tasks_time_allowance_days already exists.")
             else:
                 raise
