@@ -42,6 +42,17 @@ class TaskStatus(str, Enum):
     SKIPPED = "skipped"
 
 
+class PodcastAlias(Base):
+    """Alternative name for a podcast (e.g. for matching Google Calendar event titles)."""
+    __tablename__ = "podcast_aliases"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    podcast_id = Column(String, ForeignKey("podcasts.id", ondelete="CASCADE"), nullable=False, index=True)
+    alias = Column(String, nullable=False, unique=True, index=True)
+
+    podcast = relationship("Podcast", back_populates="aliases")
+
+
 class Podcast(Base):
     """Podcast model."""
     __tablename__ = "podcasts"
@@ -55,6 +66,7 @@ class Podcast(Base):
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     episodes = relationship("Episode", back_populates="podcast", cascade="all, delete-orphan")
+    aliases = relationship("PodcastAlias", back_populates="podcast", cascade="all, delete-orphan")
 
 
 class Episode(Base):

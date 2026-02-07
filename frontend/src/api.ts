@@ -18,8 +18,15 @@ export interface Podcast {
   host?: string;
   default_studio_settings?: string;
   tasks_time_allowance_days?: string;  // e.g. "7", "3 days", "1 week"
+  aliases?: string[];  // Alternative names (e.g. for Google Calendar event matching)
   created_at: string;
   updated_at: string;
+}
+
+export interface PodcastAlias {
+  id: string;
+  podcast_id: string;
+  alias: string;
 }
 
 export interface Episode {
@@ -91,6 +98,13 @@ export const getPodcast = (id: string) => api.get<Podcast>(`/podcasts/${id}`);
 export const createPodcast = (data: Partial<Podcast>) => api.post<Podcast>('/podcasts', data);
 export const updatePodcast = (id: string, data: Partial<Podcast>) => api.put<Podcast>(`/podcasts/${id}`, data);
 export const deletePodcast = (id: string) => api.delete(`/podcasts/${id}`);
+
+export const getPodcastAliases = (podcastId: string) =>
+  api.get<PodcastAlias[]>(`/podcasts/${podcastId}/aliases`);
+export const addPodcastAlias = (podcastId: string, alias: string) =>
+  api.post<PodcastAlias>(`/podcasts/${podcastId}/aliases`, { alias });
+export const deletePodcastAlias = (podcastId: string, aliasId: string) =>
+  api.delete(`/podcasts/${podcastId}/aliases/${aliasId}`);
 
 // Episodes
 export const getEpisodes = (params?: { 

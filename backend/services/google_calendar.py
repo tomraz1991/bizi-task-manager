@@ -10,7 +10,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from models import Episode, Podcast, EpisodeStatus
+from models import Episode, Podcast, PodcastAlias, EpisodeStatus
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -214,32 +214,50 @@ def extract_episode_data_from_event(event: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
+def find_podcast_by_name_or_alias(db: Session, podcast_name: str) -> Optional[Podcast]:
+    """
+    Find a podcast by exact name or by alias (e.g. calendar event title).
+    """
+    if not podcast_name:
+        return None
+    name = podcast_name.strip()
+    # Exact name match
+    podcast = db.query(Podcast).filter(Podcast.name == name).first()
+    if podcast:
+        return podcast
+    # Case-insensitive name match
+    podcast = db.query(Podcast).filter(Podcast.name.ilike(name)).first()
+    if podcast:
+        return podcast
+    # Alias match (exact then case-insensitive)
+    alias_row = db.query(PodcastAlias).filter(PodcastAlias.alias == name).first()
+    if alias_row:
+        return db.query(Podcast).filter(Podcast.id == alias_row.podcast_id).first()
+    alias_row = db.query(PodcastAlias).filter(PodcastAlias.alias.ilike(name)).first()
+    if alias_row:
+        return db.query(Podcast).filter(Podcast.id == alias_row.podcast_id).first()
+    return None
+
+
 def find_or_create_podcast(db: Session, podcast_name: str) -> Optional[Podcast]:
     """
-    Find existing podcast by name or create new one.
+    Find existing podcast by name or alias, or create new one.
     
     Args:
         db: Database session
-        podcast_name: Name of the podcast
+        podcast_name: Name of the podcast (or alias from calendar event)
         
     Returns:
         Podcast object or None if creation fails
     """
     if not podcast_name:
         return None
-    
-    # Try exact match first
-    podcast = db.query(Podcast).filter(Podcast.name == podcast_name).first()
+
+    # Resolve by name or alias first
+    podcast = find_podcast_by_name_or_alias(db, podcast_name)
     if podcast:
         return podcast
-    
-    # Try case-insensitive match
-    podcast = db.query(Podcast).filter(
-        Podcast.name.ilike(podcast_name)
-    ).first()
-    if podcast:
-        return podcast
-    
+
     # Create new podcast
     logger.info(f"Creating new podcast: {podcast_name}")
     podcast = Podcast(name=podcast_name)

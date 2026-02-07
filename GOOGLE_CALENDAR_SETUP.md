@@ -129,12 +129,15 @@ The system can parse episodes from calendar events in various formats:
 - `רוני וברק - 33`
 
 ### Event Data Extraction:
-- **Podcast Name**: Extracted from event title
+- **Podcast Name**: Extracted from event title (matched by podcast name or **aliases**)
 - **Episode Number**: Extracted from title (supports: "פרק X", "#X", "episode X")
 - **Recording Date**: From event start time
 - **Studio**: From event location
 - **Guest Names**: From description (looks for "אורח", "guest", "with")
 - **Notes**: From event description
+
+### Podcast aliases (matching calendar titles)
+If your calendar event title uses a different name than the podcast (e.g. a short name or internal code), add **aliases** for that podcast so events are linked correctly. In the app: **Podcasts** → **Edit** on the podcast → **Aliases** → add the exact string that appears in calendar event titles. When syncing from Google Calendar, the system matches by podcast name first, then by alias.
 
 ### Extended Properties (Optional):
 You can also store metadata in event extended properties:

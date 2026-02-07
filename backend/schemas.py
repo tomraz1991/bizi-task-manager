@@ -1,8 +1,8 @@
 """
 Pydantic schemas for request/response validation.
 """
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel, Field, field_serializer
+from typing import Optional, List, Any
 from datetime import datetime
 from models import EpisodeStatus, TaskType, TaskStatus
 
@@ -29,6 +29,26 @@ class Podcast(PodcastBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    aliases: Optional[List[Any]] = None  # From relationship: list of PodcastAlias or list of str
+
+    class Config:
+        from_attributes = True
+
+    @field_serializer("aliases")
+    def serialize_aliases(self, v):
+        if v is None:
+            return []
+        return [a.alias if hasattr(a, "alias") else a for a in v]
+
+
+class PodcastAliasCreate(BaseModel):
+    alias: str
+
+
+class PodcastAliasOut(BaseModel):
+    id: str
+    podcast_id: str
+    alias: str
 
     class Config:
         from_attributes = True

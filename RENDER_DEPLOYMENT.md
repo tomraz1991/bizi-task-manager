@@ -60,7 +60,25 @@ You’ll deploy the **backend first**, then the **frontend** (so the frontend ca
 - **Option A – Render PostgreSQL:** In the same Render account, create a **PostgreSQL** instance, then copy the **Internal Database URL** (or External if you prefer) into `DATABASE_URL` for the backend.
 - **Option B – SQLite (not recommended for production):** You can omit `DATABASE_URL` to use the default SQLite path. Note: on free tier the filesystem can be ephemeral; use PostgreSQL for real data.
 
-**Migrations:** You do **not** need to run migrations or use Render Shell. On each deploy the app runs `init_db()` at startup, which creates all tables from the current models. A new PostgreSQL database will have the correct schema as soon as the backend starts.
+**Migrations:** You do **not** need to run migrations or use Render Shell for a **new** database. On each deploy the app runs `init_db()` at startup, which creates any **missing tables** from the current models. So new tables (e.g. `podcast_aliases`) are created automatically on the next deploy.
+
+### Updating the database without Shell
+
+If you need to run a migration (e.g. a script that adds a **new column** to an existing table) and you don’t have access to Render Shell:
+
+1. **Get the DB URL from Render:** Dashboard → your **backend** Web Service → **Environment** → copy `DATABASE_URL` (Internal Database URL from your PostgreSQL service).
+2. **Run the migration on your machine** (from the repo root):
+   ```bash
+   cd backend
+   # If Render gave you postgres://..., use postgresql:// for SQLAlchemy
+   export DATABASE_URL="postgresql://user:pass@host/dbname"
+   .venv/bin/python migrate_podcast_aliases.py
+   # or: .venv/bin/python migrate_memory_card.py  etc.
+   ```
+   Use the same Python/venv you use for local development; the script will connect to Render’s PostgreSQL and apply the migration.
+
+**Optional – run migrations on every deploy:** In the backend Web Service on Render, set **Release Command** to something like:
+`python migrate_podcast_aliases.py` (or a single script that runs all migrations). The app’s **Start Command** stays as-is. Release runs after build and before the new instance goes live; use migrations that are safe to run repeatedly (e.g. `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
 
 ---
 

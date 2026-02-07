@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, FileAudio } from 'lucide-react';
-import { getPodcasts, updatePodcast, createPodcast, deletePodcast, Podcast } from '../api';
+import { Plus, Edit2, FileAudio, X } from 'lucide-react';
+import {
+  getPodcasts,
+  updatePodcast,
+  createPodcast,
+  deletePodcast,
+  getPodcastAliases,
+  addPodcastAlias,
+  deletePodcastAlias,
+  Podcast,
+  PodcastAlias,
+} from '../api';
 
 export default function Podcasts() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPodcast, setSelectedPodcast] = useState<Podcast | null>(null);
+  const [aliasList, setAliasList] = useState<PodcastAlias[]>([]);
+  const [newAlias, setNewAlias] = useState('');
+  const [aliasLoading, setAliasLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     host: '',
@@ -27,13 +40,20 @@ export default function Podcasts() {
         default_studio_settings: selectedPodcast.default_studio_settings || '',
         tasks_time_allowance_days: selectedPodcast.tasks_time_allowance_days || '',
       });
-    } else if (isModalOpen && !selectedPodcast) {
-      setFormData({
-        name: '',
-        host: '',
-        default_studio_settings: '',
-        tasks_time_allowance_days: '',
-      });
+      getPodcastAliases(selectedPodcast.id)
+        .then((res) => setAliasList(res.data))
+        .catch(() => setAliasList([]));
+    } else {
+      setAliasList([]);
+      setNewAlias('');
+      if (isModalOpen && !selectedPodcast) {
+        setFormData({
+          name: '',
+          host: '',
+          default_studio_settings: '',
+          tasks_time_allowance_days: '',
+        });
+      }
     }
   }, [isModalOpen, selectedPodcast]);
 
@@ -77,6 +97,36 @@ export default function Podcasts() {
       }
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to delete podcast');
+    }
+  };
+
+  const handleAddAlias = async () => {
+    if (!selectedPodcast || !newAlias.trim()) return;
+    setAliasLoading(true);
+    setError(null);
+    try {
+      await addPodcastAlias(selectedPodcast.id, newAlias.trim());
+      const res = await getPodcastAliases(selectedPodcast.id);
+      setAliasList(res.data);
+      setNewAlias('');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to add alias');
+    } finally {
+      setAliasLoading(false);
+    }
+  };
+
+  const handleRemoveAlias = async (aliasId: string) => {
+    if (!selectedPodcast) return;
+    setAliasLoading(true);
+    setError(null);
+    try {
+      await deletePodcastAlias(selectedPodcast.id, aliasId);
+      setAliasList((prev) => prev.filter((a) => a.id !== aliasId));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to remove alias');
+    } finally {
+      setAliasLoading(false);
     }
   };
 
@@ -238,6 +288,55 @@ export default function Podcasts() {
                   placeholder="e.g., two mics, two cameras"
                 />
               </div>
+              {selectedPodcast && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Aliases (for Google Calendar matching)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    If a calendar event title matches an alias, it will be linked to this podcast.
+                  </p>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newAlias}
+                      onChange={(e) => setNewAlias(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAlias())}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                      placeholder="e.g. short name or calendar title"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddAlias}
+                      disabled={aliasLoading || !newAlias.trim()}
+                      className="px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {aliasList.length > 0 && (
+                    <ul className="space-y-1.5">
+                      {aliasList.map((a) => (
+                        <li
+                          key={a.id}
+                          className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                        >
+                          <span className="text-gray-800">{a.alias}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAlias(a.id)}
+                            disabled={aliasLoading}
+                            className="text-gray-400 hover:text-red-600 p-1 rounded"
+                            aria-label={`Remove alias ${a.alias}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"

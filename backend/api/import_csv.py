@@ -56,7 +56,7 @@ def get_or_create_podcast(db: Session, name: str, host: Optional[str] = None) ->
     """Get existing podcast or create new one."""
     if not name or name.strip() == "":
         return None
-    
+
     name = name.strip()
     podcast = db.query(Podcast).filter(Podcast.name == name).first()
     if not podcast:
@@ -65,6 +65,30 @@ def get_or_create_podcast(db: Session, name: str, host: Optional[str] = None) ->
         db.commit()
         db.refresh(podcast)
     return podcast
+
+
+def find_episode(
+    db: Session,
+    podcast_id: str,
+    episode_number: Optional[str],
+    recording_date: Optional[datetime],
+) -> Optional[Episode]:
+    """Find an existing episode by podcast + episode_number, or podcast + recording_date if no number."""
+    if episode_number and episode_number.strip():
+        ep = db.query(Episode).filter(
+            Episode.podcast_id == podcast_id,
+            Episode.episode_number == episode_number.strip(),
+        ).first()
+        if ep:
+            return ep
+    if recording_date is not None:
+        ep = db.query(Episode).filter(
+            Episode.podcast_id == podcast_id,
+            Episode.recording_date == recording_date,
+        ).first()
+        if ep:
+            return ep
+    return None
 
 
 def parse_episode_status(status_str: str) -> EpisodeStatus:
@@ -183,32 +207,51 @@ async def import_csv_file(
                         reels_user = get_or_create_user(db, reels_person)
                         if reels_user:
                             reels_engineer_id = reels_user.id
-                    
-                    # Create episode with engineer assignments
-                    episode = Episode(
-                        podcast_id=podcast.id,
-                        episode_number=episode_number if episode_number else None,
-                        recording_date=recording_date,
-                        studio=studio if studio else None,
-                        guest_names=guest_names if guest_names else None,
-                        status=status,
-                        episode_notes=episode_notes if episode_notes else None,
-                        drive_link=drive_link if drive_link else None,
-                        backup_deletion_date=backup_deletion_date,
-                        card_name=card_name if card_name else None,
-                        memory_card=memory_card if memory_card else None,
-                        recording_engineer_id=recording_engineer_id,
-                        editing_engineer_id=editing_engineer_id,
-                        reels_engineer_id=reels_engineer_id,
-                        reels_notes=reels_notes if reels_notes else None,
-                    )
-                    db.add(episode)
-                    db.flush()  # Get episode ID
-                    
-                    # Debug: Verify stored date
+
+                    # Find existing episode (same podcast + episode_number or same podcast + recording_date)
+                    episode = find_episode(db, podcast.id, episode_number, recording_date)
+                    if episode:
+                        # Update existing episode
+                        episode.episode_number = episode_number if episode_number else episode.episode_number
+                        episode.recording_date = recording_date
+                        episode.studio = studio if studio else None
+                        episode.guest_names = guest_names if guest_names else None
+                        episode.status = status
+                        episode.episode_notes = episode_notes if episode_notes else None
+                        episode.drive_link = drive_link if drive_link else None
+                        episode.backup_deletion_date = backup_deletion_date
+                        episode.card_name = card_name if card_name else None
+                        episode.memory_card = memory_card if memory_card else None
+                        episode.recording_engineer_id = recording_engineer_id
+                        episode.editing_engineer_id = editing_engineer_id
+                        episode.reels_engineer_id = reels_engineer_id
+                        episode.reels_notes = reels_notes if reels_notes else None
+                        db.flush()
+                    else:
+                        # Create new episode
+                        episode = Episode(
+                            podcast_id=podcast.id,
+                            episode_number=episode_number if episode_number else None,
+                            recording_date=recording_date,
+                            studio=studio if studio else None,
+                            guest_names=guest_names if guest_names else None,
+                            status=status,
+                            episode_notes=episode_notes if episode_notes else None,
+                            drive_link=drive_link if drive_link else None,
+                            backup_deletion_date=backup_deletion_date,
+                            card_name=card_name if card_name else None,
+                            memory_card=memory_card if memory_card else None,
+                            recording_engineer_id=recording_engineer_id,
+                            editing_engineer_id=editing_engineer_id,
+                            reels_engineer_id=reels_engineer_id,
+                            reels_notes=reels_notes if reels_notes else None,
+                        )
+                        db.add(episode)
+                        db.flush()
+
                     if row_num <= 5 and recording_date:
                         logger.info(f"Row {row_num}: Stored recording_date as {episode.recording_date} (year: {episode.recording_date.year if episode.recording_date else None})")
-                    
+
                     imported_count += 1
                     
                 except Exception as e:
