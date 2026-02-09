@@ -55,6 +55,38 @@ def create_studio_preparation_task(db: Session, episode: Episode) -> Optional[Ta
     return task
 
 
+def create_recording_task(db: Session, episode: Episode) -> Optional[Task]:
+    """Create a recording task for an episode if it doesn't exist (e.g. after studio prep is done)."""
+    existing = db.query(Task).filter(
+        and_(
+            Task.episode_id == episode.id,
+            Task.type == TaskType.RECORDING
+        )
+    ).first()
+    if existing:
+        return existing
+    due_date = None
+    if episode.recording_date:
+        due_date = episode.recording_date
+        now_utc = datetime.now(timezone.utc)
+        now_compare = now_utc.replace(tzinfo=None) if (due_date.tzinfo is None) else now_utc
+        if due_date < now_compare:
+            due_date = now_utc.replace(tzinfo=None) if (due_date.tzinfo is None) else now_utc
+    task = Task(
+        episode_id=episode.id,
+        type=TaskType.RECORDING,
+        status=TaskStatus.NOT_STARTED,
+        assigned_to=episode.recording_engineer_id,
+        due_date=due_date,
+        notes="Record the episode"
+    )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    logger.info(f"Created recording task {task.id} for episode {episode.id}")
+    return task
+
+
 def create_editing_task(db: Session, episode: Episode) -> Optional[Task]:
     """Create an editing task for an episode if it doesn't exist."""
     # Check if task already exists
@@ -76,7 +108,7 @@ def create_editing_task(db: Session, episode: Episode) -> Optional[Task]:
     task = Task(
         episode_id=episode.id,
         type=TaskType.EDITING,
-        status=TaskStatus.NOT_STARTED,
+        status=TaskStatus.SENT_TO_CLIENT,
         assigned_to=episode.editing_engineer_id,
         due_date=due_date,
         notes="Edit episode. Task will be marked complete when client approves."
@@ -110,7 +142,7 @@ def create_reels_task(db: Session, episode: Episode) -> Optional[Task]:
     task = Task(
         episode_id=episode.id,
         type=TaskType.REELS,
-        status=TaskStatus.NOT_STARTED,
+        status=TaskStatus.SENT_TO_CLIENT,
         assigned_to=episode.reels_engineer_id,
         due_date=due_date,
         notes=episode.reels_notes or "Export reels from episode. Task will be marked complete when client approves."
@@ -190,8 +222,8 @@ def sync_editing_task_status(db: Session, episode: Episode):
                 db.commit()
                 logger.info(f"Marked editing task {task.id} as done (client approved)")
         elif episode.client_approved_editing == "rejected":
-            # Reset to in_progress if client rejected
-            if task.status == TaskStatus.DONE:
+            # Reset to in_progress if client rejected (was done or sent to client)
+            if task.status in (TaskStatus.DONE, TaskStatus.SENT_TO_CLIENT):
                 task.status = TaskStatus.IN_PROGRESS
                 task.completed_at = None
                 db.commit()
@@ -215,8 +247,8 @@ def sync_reels_task_status(db: Session, episode: Episode):
                 db.commit()
                 logger.info(f"Marked reels task {task.id} as done (client approved)")
         elif episode.client_approved_reels == "rejected":
-            # Reset to in_progress if client rejected
-            if task.status == TaskStatus.DONE:
+            # Reset to in_progress if client rejected (was done or sent to client)
+            if task.status in (TaskStatus.DONE, TaskStatus.SENT_TO_CLIENT):
                 task.status = TaskStatus.IN_PROGRESS
                 task.completed_at = None
                 db.commit()
@@ -264,6 +296,29 @@ def process_daily_workflow(db: Session):
     except Exception as e:
         logger.error(f"Error in daily workflow processing: {e}", exc_info=True)
         raise
+
+
+def process_task_status_change(db: Session, task: Task, old_status: TaskStatus):
+    """Process workflow when a task is updated (e.g. studio prep done -> recording task; recording done -> episode recorded)."""
+    if old_status == TaskStatus.DONE:
+        return  # no transition to DONE
+    if task.status != TaskStatus.DONE:
+        return
+
+    episode = db.query(Episode).filter(Episode.id == task.episode_id).first()
+    if not episode:
+        return
+
+    if task.type == TaskType.STUDIO_PREPARATION:
+        create_recording_task(db, episode)
+        logger.info(f"Studio preparation task {task.id} marked done -> created recording task for episode {episode.id}")
+    elif task.type == TaskType.RECORDING:
+        old_episode_status = episode.status
+        episode.status = EpisodeStatus.RECORDED
+        db.commit()
+        db.refresh(episode)
+        process_episode_status_change(db, episode, old_episode_status)
+        logger.info(f"Recording task {task.id} marked done -> episode {episode.id} status set to recorded")
 
 
 def process_episode_status_change(db: Session, episode: Episode, old_status: EpisodeStatus):

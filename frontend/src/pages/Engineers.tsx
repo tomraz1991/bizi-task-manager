@@ -330,6 +330,7 @@ export default function Engineers() {
                                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                     task.status === 'done' ? 'bg-green-100 text-green-800' :
                                     task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                    task.status === 'sent_to_client' ? 'bg-amber-100 text-amber-800' :
                                     'bg-gray-100 text-gray-800'
                                   }`}>
                                     {task.status.replace('_', ' ')}

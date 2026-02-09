@@ -61,7 +61,7 @@ export interface Task {
   id: string;
   episode_id: string;
   type: 'recording' | 'editing' | 'reels' | 'publishing' | 'studio_preparation';
-  status: 'not_started' | 'in_progress' | 'blocked' | 'done' | 'skipped';
+  status: 'not_started' | 'in_progress' | 'blocked' | 'sent_to_client' | 'done' | 'skipped';
   assigned_to?: string;
   due_date?: string;
   notes?: string;

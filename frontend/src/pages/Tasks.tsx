@@ -65,6 +65,7 @@ export default function Tasks() {
     in_progress: 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border border-blue-200',
     blocked: 'bg-gradient-to-r from-red-100 to-red-50 text-red-800 border border-red-200',
     not_started: 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 border border-gray-200',
+    sent_to_client: 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-800 border border-amber-200',
     skipped: 'bg-gradient-to-r from-yellow-100 to-yellow-50 text-yellow-800 border border-yellow-200',
   };
 
@@ -134,6 +135,7 @@ export default function Tasks() {
             <option value="not_started">Not Started</option>
             <option value="in_progress">In Progress</option>
             <option value="blocked">Blocked</option>
+            <option value="sent_to_client">Sent to Client</option>
             <option value="done">Done</option>
             <option value="skipped">Skipped</option>
           </select>

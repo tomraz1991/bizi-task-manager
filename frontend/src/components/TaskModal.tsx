@@ -168,6 +168,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave }: TaskModalPr
                 <option value="not_started">Not Started</option>
                 <option value="in_progress">In Progress</option>
                 <option value="blocked">Blocked</option>
+                <option value="sent_to_client">Sent to Client</option>
                 <option value="done">Done</option>
                 <option value="skipped">Skipped</option>
               </select>

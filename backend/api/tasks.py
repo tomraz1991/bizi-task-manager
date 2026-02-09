@@ -95,16 +95,16 @@ async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 async def update_task(
     task_id: str, task_update: TaskUpdate, db: Session = Depends(get_db)
 ):
-    """Update a task."""
+    """Update a task. When a studio preparation task is marked done, a recording task is created."""
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
     
     update_data = task_update.model_dump(exclude_unset=True)
+    old_status = db_task.status
     
     # Auto-set completed_at when status changes to DONE
     if update_data.get("status") == TaskStatus.DONE and db_task.status != TaskStatus.DONE:
-        from datetime import timezone
         update_data["completed_at"] = datetime.now(timezone.utc)
     elif update_data.get("status") != TaskStatus.DONE and db_task.status == TaskStatus.DONE:
         update_data["completed_at"] = None
@@ -114,6 +114,10 @@ async def update_task(
     
     db.commit()
     db.refresh(db_task)
+    # When studio preparation is marked done, create a recording task for the episode
+    if "status" in update_data:
+        from services.workflow_automation import process_task_status_change
+        process_task_status_change(db, db_task, old_status)
     return db_task
 
 
