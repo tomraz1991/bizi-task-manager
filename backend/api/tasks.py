@@ -3,9 +3,9 @@ Task API endpoints.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import nullslast
+from sqlalchemy import nullslast, or_
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from database import get_db
 from models import Task, TaskStatus, TaskType, Episode
@@ -13,6 +13,16 @@ from schemas import Task as TaskSchema, TaskCreate, TaskUpdate, TaskWithEpisode
 from constants import DEFAULT_NOTIFICATION_DAYS
 
 router = APIRouter()
+
+# Studio preparation tasks more than 1 day overdue are excluded from lists and cleaned up daily
+def _exclude_stale_studio_prep_filter():
+    now = datetime.now(timezone.utc)
+    cutoff = (now - timedelta(days=1)).replace(tzinfo=None)  # naive UTC for DB comparison
+    return or_(
+        Task.type != TaskType.STUDIO_PREPARATION,
+        Task.due_date.is_(None),
+        Task.due_date >= cutoff
+    )
 
 
 @router.get("/", response_model=List[TaskWithEpisode])
@@ -25,12 +35,12 @@ async def get_tasks(
     task_type: Optional[TaskType] = None,
     db: Session = Depends(get_db)
 ):
-    """Get all tasks with optional filtering."""
+    """Get all tasks with optional filtering. Studio preparation tasks > 1 day overdue are excluded."""
     # Use eager loading to prevent N+1 queries
     query = db.query(Task).options(
         joinedload(Task.episode).joinedload(Episode.podcast),
         joinedload(Task.assigned_user)
-    )
+    ).filter(_exclude_stale_studio_prep_filter())
     
     if episode_id:
         query = query.filter(Task.episode_id == episode_id)
@@ -124,8 +134,7 @@ async def get_due_tasks(
     days_ahead: int = Query(DEFAULT_NOTIFICATION_DAYS, description="Number of days ahead to look"),
     db: Session = Depends(get_db)
 ):
-    """Get tasks that are due soon."""
-    from datetime import timedelta, timezone
+    """Get tasks that are due soon. Studio preparation tasks > 1 day overdue are excluded."""
     now = datetime.now(timezone.utc)
     future_date = now + timedelta(days=days_ahead)
     
@@ -133,6 +142,7 @@ async def get_due_tasks(
         joinedload(Task.episode).joinedload(Episode.podcast),
         joinedload(Task.assigned_user)
     ).filter(
+        _exclude_stale_studio_prep_filter(),
         Task.due_date >= now,
         Task.due_date <= future_date,
         Task.status != TaskStatus.DONE,
@@ -144,14 +154,14 @@ async def get_due_tasks(
 
 @router.get("/overdue", response_model=List[TaskWithEpisode])
 async def get_overdue_tasks(db: Session = Depends(get_db)):
-    """Get overdue tasks."""
-    from datetime import timezone
+    """Get overdue tasks. Studio preparation tasks > 1 day overdue are excluded (and removed from DB by daily workflow)."""
     now = datetime.now(timezone.utc)
     
     tasks = db.query(Task).options(
         joinedload(Task.episode).joinedload(Episode.podcast),
         joinedload(Task.assigned_user)
     ).filter(
+        _exclude_stale_studio_prep_filter(),
         Task.due_date < now,
         Task.status != TaskStatus.DONE,
         Task.status != TaskStatus.SKIPPED

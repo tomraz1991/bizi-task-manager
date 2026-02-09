@@ -223,11 +223,33 @@ def sync_reels_task_status(db: Session, episode: Episode):
                 logger.info(f"Reset reels task {task.id} to in_progress (client rejected)")
 
 
+def delete_stale_studio_preparation_tasks(db: Session) -> int:
+    """Delete studio preparation tasks that are more than 1 day overdue. Returns count deleted."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=1)
+    # Normalize for DB comparison (due_date may be stored naive UTC)
+    cutoff_naive = cutoff.replace(tzinfo=None) if cutoff.tzinfo else cutoff
+    deleted = db.query(Task).filter(
+        and_(
+            Task.type == TaskType.STUDIO_PREPARATION,
+            Task.due_date.is_not(None),
+            Task.due_date < cutoff_naive
+        )
+    ).delete(synchronize_session=False)
+    if deleted:
+        db.commit()
+        logger.info(f"Deleted {deleted} stale studio preparation task(s) (> 1 day overdue)")
+    return deleted
+
+
 def process_daily_workflow(db: Session):
     """Process daily workflow: create tasks for today's episodes from Google Calendar."""
     logger.info("Starting daily workflow processing")
     
     try:
+        # Remove studio preparation tasks that are more than 1 day overdue
+        delete_stale_studio_preparation_tasks(db)
+        
         # Get today's episodes from Google Calendar
         today_episodes = get_todays_episodes_from_calendar(db)
         

@@ -421,10 +421,10 @@ def get_todays_episodes_from_calendar(db: Session) -> List[Episode]:
                     logger.debug(f"Skipping event '{event.get('summary')}' - no podcast name found")
                     continue
                 
-                # Find or create podcast
-                podcast = find_or_create_podcast(db, event_data['podcast_name'])
+                # Only import if podcast is recognized (name or alias); do not create new podcasts
+                podcast = find_podcast_by_name_or_alias(db, event_data['podcast_name'])
                 if not podcast:
-                    logger.warning(f"Could not find or create podcast: {event_data['podcast_name']}")
+                    logger.info(f"Skipping event '{event.get('summary')}' - podcast not recognized: {event_data['podcast_name']}")
                     continue
                 
                 # Create or update episode
@@ -523,9 +523,10 @@ def sync_calendar_to_database(db: Session, days_ahead: Optional[int] = None) -> 
                 if not event_data.get('podcast_name'):
                     continue
                 
-                # Find or create podcast
-                podcast = find_or_create_podcast(db, event_data['podcast_name'])
+                # Only import if podcast is recognized (name or alias); do not create new podcasts
+                podcast = find_podcast_by_name_or_alias(db, event_data['podcast_name'])
                 if not podcast:
+                    logger.debug(f"Skipping event - podcast not recognized: {event_data['podcast_name']}")
                     continue
                 
                 # Create or update episode
