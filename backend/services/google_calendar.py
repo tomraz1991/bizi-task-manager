@@ -239,6 +239,35 @@ def find_podcast_by_name_or_alias(db: Session, podcast_name: str) -> Optional[Po
     return None
 
 
+def find_podcast_from_event_title(db: Session, event_title: str) -> Optional[Podcast]:
+    """
+    Find a podcast from a calendar event title (e.g. "Some Podcast - Givon Room").
+    Tries exact name/alias match first, then finds a podcast whose name or alias
+    appears in the title (longest match wins so "Some Podcast" beats "Some").
+    """
+    if not event_title:
+        return None
+    title = event_title.strip()
+    # 1. Try exact match with full title
+    podcast = find_podcast_by_name_or_alias(db, title)
+    if podcast:
+        return podcast
+    # 2. Find podcasts/aliases that appear as a substring in the title (case-insensitive)
+    title_lower = title.lower()
+    candidates = []  # (podcast_id, match_length)
+    for p in db.query(Podcast).all():
+        if p.name and p.name.strip().lower() in title_lower:
+            candidates.append((p.id, len(p.name.strip())))
+    for a in db.query(PodcastAlias).all():
+        if a.alias and a.alias.strip().lower() in title_lower:
+            candidates.append((a.podcast_id, len(a.alias.strip())))
+    if not candidates:
+        return None
+    # Longest match wins (avoids "The" matching instead of "The Show")
+    best_podcast_id = max(candidates, key=lambda x: x[1])[0]
+    return db.query(Podcast).filter(Podcast.id == best_podcast_id).first()
+
+
 def find_or_create_podcast(db: Session, podcast_name: str) -> Optional[Podcast]:
     """
     Find existing podcast by name or alias, or create new one.
@@ -417,14 +446,15 @@ def get_todays_episodes_from_calendar(db: Session) -> List[Episode]:
                 # Extract episode data from event
                 event_data = extract_episode_data_from_event(event)
                 
-                if not event_data.get('podcast_name'):
-                    logger.debug(f"Skipping event '{event.get('summary')}' - no podcast name found")
+                raw_title = event.get('summary') or ''
+                if not raw_title.strip():
+                    logger.debug(f"Skipping event - no title")
                     continue
                 
-                # Only import if podcast is recognized (name or alias); do not create new podcasts
-                podcast = find_podcast_by_name_or_alias(db, event_data['podcast_name'])
+                # Only import if podcast is recognized (name or alias in title); do not create new podcasts
+                podcast = find_podcast_from_event_title(db, raw_title)
                 if not podcast:
-                    logger.info(f"Skipping event '{event.get('summary')}' - podcast not recognized: {event_data['podcast_name']}")
+                    logger.info(f"Skipping event '{raw_title}' - no recognized podcast name or alias in title")
                     continue
                 
                 # Create or update episode
@@ -520,13 +550,14 @@ def sync_calendar_to_database(db: Session, days_ahead: Optional[int] = None) -> 
                 # Extract episode data from event
                 event_data = extract_episode_data_from_event(event)
                 
-                if not event_data.get('podcast_name'):
+                raw_title = event.get('summary') or ''
+                if not raw_title.strip():
                     continue
                 
-                # Only import if podcast is recognized (name or alias); do not create new podcasts
-                podcast = find_podcast_by_name_or_alias(db, event_data['podcast_name'])
+                # Only import if podcast is recognized (name or alias in title); do not create new podcasts
+                podcast = find_podcast_from_event_title(db, raw_title)
                 if not podcast:
-                    logger.debug(f"Skipping event - podcast not recognized: {event_data['podcast_name']}")
+                    logger.debug(f"Skipping event - no recognized podcast in title: {raw_title}")
                     continue
                 
                 # Create or update episode
