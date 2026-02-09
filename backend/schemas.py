@@ -15,7 +15,7 @@ class PodcastBase(BaseModel):
 
 
 class PodcastCreate(PodcastBase):
-    pass
+    aliases: Optional[List[str]] = None  # Optional aliases when creating (e.g. for Google Calendar matching)
 
 
 class PodcastUpdate(BaseModel):

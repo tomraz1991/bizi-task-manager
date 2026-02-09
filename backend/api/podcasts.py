@@ -30,11 +30,26 @@ async def get_podcast(podcast_id: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=PodcastSchema)
 async def create_podcast(podcast: PodcastCreate, db: Session = Depends(get_db)):
-    """Create a new podcast."""
-    db_podcast = Podcast(**podcast.model_dump())
+    """Create a new podcast, optionally with aliases."""
+    data = podcast.model_dump(exclude={"aliases"})
+    db_podcast = Podcast(**data)
     db.add(db_podcast)
     db.commit()
     db.refresh(db_podcast)
+    # Create alias records if provided
+    aliases = podcast.aliases or []
+    for raw in aliases:
+        alias_str = (raw or "").strip()
+        if not alias_str:
+            continue
+        existing = db.query(PodcastAlias).filter(PodcastAlias.alias == alias_str).first()
+        if existing:
+            continue  # skip if already used by another podcast
+        db.add(PodcastAlias(podcast_id=db_podcast.id, alias=alias_str))
+    db.commit()
+    # Return podcast with aliases loaded
+    db.refresh(db_podcast)
+    db_podcast = db.query(Podcast).options(joinedload(Podcast.aliases)).filter(Podcast.id == db_podcast.id).first()
     return db_podcast
 
 

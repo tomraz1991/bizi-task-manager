@@ -17,6 +17,7 @@ export default function Podcasts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPodcast, setSelectedPodcast] = useState<Podcast | null>(null);
   const [aliasList, setAliasList] = useState<PodcastAlias[]>([]);
+  const [createAliases, setCreateAliases] = useState<string[]>([]);
   const [newAlias, setNewAlias] = useState('');
   const [aliasLoading, setAliasLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,6 +54,7 @@ export default function Podcasts() {
           default_studio_settings: '',
           tasks_time_allowance_days: '',
         });
+        setCreateAliases([]);
       }
     }
   }, [isModalOpen, selectedPodcast]);
@@ -74,7 +76,8 @@ export default function Podcasts() {
       if (selectedPodcast) {
         await updatePodcast(selectedPodcast.id, formData);
       } else {
-        await createPodcast(formData);
+        const aliasesToSend = createAliases.map((a) => a.trim()).filter(Boolean);
+        await createPodcast({ ...formData, ...(aliasesToSend.length ? { aliases: aliasesToSend } : {}) });
       }
       loadPodcasts();
       setIsModalOpen(false);
@@ -114,6 +117,16 @@ export default function Podcasts() {
     } finally {
       setAliasLoading(false);
     }
+  };
+
+  const handleAddCreateAlias = () => {
+    if (!newAlias.trim()) return;
+    setCreateAliases((prev) => [...prev, newAlias.trim()]);
+    setNewAlias('');
+  };
+
+  const handleRemoveCreateAlias = (index: number) => {
+    setCreateAliases((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleRemoveAlias = async (aliasId: string) => {
@@ -288,23 +301,28 @@ export default function Podcasts() {
                   placeholder="e.g., two mics, two cameras"
                 />
               </div>
-              {selectedPodcast && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Aliases (for Google Calendar matching)
-                  </label>
-                  <p className="text-xs text-gray-500 mb-2">
-                    If a calendar event title matches an alias, it will be linked to this podcast.
-                  </p>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={newAlias}
-                      onChange={(e) => setNewAlias(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAlias())}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                      placeholder="e.g. short name or calendar title"
-                    />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Aliases (for Google Calendar matching)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  If a calendar event title matches an alias, it will be linked to this podcast.
+                </p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={newAlias}
+                    onChange={(e) => setNewAlias(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        selectedPodcast ? handleAddAlias() : handleAddCreateAlias();
+                      }
+                    }}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                    placeholder="e.g. short name or calendar title"
+                  />
+                  {selectedPodcast ? (
                     <button
                       type="button"
                       onClick={handleAddAlias}
@@ -313,30 +331,59 @@ export default function Podcasts() {
                     >
                       Add
                     </button>
-                  </div>
-                  {aliasList.length > 0 && (
-                    <ul className="space-y-1.5">
-                      {aliasList.map((a) => (
-                        <li
-                          key={a.id}
-                          className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
-                        >
-                          <span className="text-gray-800">{a.alias}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAlias(a.id)}
-                            disabled={aliasLoading}
-                            className="text-gray-400 hover:text-red-600 p-1 rounded"
-                            aria-label={`Remove alias ${a.alias}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleAddCreateAlias}
+                      disabled={!newAlias.trim()}
+                      className="px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
                   )}
                 </div>
-              )}
+                {selectedPodcast && aliasList.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {aliasList.map((a) => (
+                      <li
+                        key={a.id}
+                        className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                      >
+                        <span className="text-gray-800">{a.alias}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAlias(a.id)}
+                          disabled={aliasLoading}
+                          className="text-gray-400 hover:text-red-600 p-1 rounded"
+                          aria-label={`Remove alias ${a.alias}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {!selectedPodcast && createAliases.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {createAliases.map((alias, index) => (
+                      <li
+                        key={`${index}-${alias}`}
+                        className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                      >
+                        <span className="text-gray-800">{alias}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCreateAlias(index)}
+                          className="text-gray-400 hover:text-red-600 p-1 rounded"
+                          aria-label={`Remove alias ${alias}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
