@@ -16,21 +16,21 @@ def migrate():
         print("Not PostgreSQL; no enum migration needed (SQLite uses string).")
         return
     with engine.connect() as conn:
-        # PostgreSQL: add new value to existing enum (SQLAlchemy creates type "taskstatus")
+        # PostgreSQL enum was created with Python enum NAMES (e.g. SENT_TO_CLIENT), not values
+        value_to_add = "SENT_TO_CLIENT"
         try:
-            conn.execute(text("ALTER TYPE taskstatus ADD VALUE IF NOT EXISTS 'sent_to_client'"))
+            conn.execute(text(f"ALTER TYPE taskstatus ADD VALUE IF NOT EXISTS '{value_to_add}'"))
             conn.commit()
-            print("Added 'sent_to_client' to taskstatus enum.")
+            print(f"Added '{value_to_add}' to taskstatus enum.")
         except Exception as e:
-            # Older PostgreSQL: IF NOT EXISTS not supported, try without
             if "syntax" in str(e).lower() or "not exist" in str(e).lower():
                 try:
-                    conn.execute(text("ALTER TYPE taskstatus ADD VALUE 'sent_to_client'"))
+                    conn.execute(text(f"ALTER TYPE taskstatus ADD VALUE '{value_to_add}'"))
                     conn.commit()
-                    print("Added 'sent_to_client' to taskstatus enum.")
+                    print(f"Added '{value_to_add}' to taskstatus enum.")
                 except Exception as e2:
                     if "already exists" in str(e2).lower():
-                        print("Value 'sent_to_client' already in taskstatus enum.")
+                        print(f"Value '{value_to_add}' already in taskstatus enum.")
                         conn.rollback()
                     else:
                         conn.rollback()
