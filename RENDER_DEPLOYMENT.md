@@ -73,9 +73,10 @@ If you need to run a migration (e.g. a script that adds a **new column** to an e
    # If Render gave you postgres://..., use postgresql:// for SQLAlchemy
    export DATABASE_URL="postgresql://user:pass@host/dbname"
    .venv/bin/python migrate_podcast_aliases.py
-   # or: .venv/bin/python migrate_memory_card.py  etc.
+   # or: .venv/bin/python migrate_memory_card.py
+   # or: .venv/bin/python migrate_task_status_sent_to_client.py  (adds enum value for “Sent to client” task status)
    ```
-   Use the same Python/venv you use for local development; the script will connect to Render’s PostgreSQL and apply the migration.
+   Use the same Python/venv you use for local development; the script will connect to Render’s PostgreSQL and apply the migration. Use the **External** Database URL when running from your machine.
 
 **Optional – run migrations on every deploy:** In the backend Web Service on Render, set **Release Command** to something like:
 `python migrate_podcast_aliases.py` (or a single script that runs all migrations). The app’s **Start Command** stays as-is. Release runs after build and before the new instance goes live; use migrations that are safe to run repeatedly (e.g. `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
