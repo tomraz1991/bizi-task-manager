@@ -13,6 +13,13 @@ from services.google_calendar import get_todays_episodes_from_calendar
 logger = logging.getLogger(__name__)
 
 
+def _task_notes_with_episode(base: str, episode: Episode) -> str:
+    """Append episode notes to task notes when present."""
+    if episode.episode_notes and episode.episode_notes.strip():
+        return f"{base}\n\nEpisode notes: {episode.episode_notes.strip()}"
+    return base
+
+
 def create_studio_preparation_task(db: Session, episode: Episode) -> Optional[Task]:
     """Create a studio preparation task for an episode if it doesn't exist."""
     # Check if task already exists
@@ -39,13 +46,14 @@ def create_studio_preparation_task(db: Session, episode: Episode) -> Optional[Ta
         if due_date < now_compare:
             due_date = now_utc.replace(tzinfo=None) if (due_date.tzinfo is None) else now_utc
     
+    base_notes = f"Studio setup: {studio_settings}" if studio_settings else "Prepare studio for recording"
     task = Task(
         episode_id=episode.id,
         type=TaskType.STUDIO_PREPARATION,
         status=TaskStatus.NOT_STARTED,
         assigned_to=episode.recording_engineer_id,  # Assign to recording engineer
         due_date=due_date,
-        notes=f"Studio setup: {studio_settings}" if studio_settings else "Prepare studio for recording"
+        notes=_task_notes_with_episode(base_notes, episode)
     )
     
     db.add(task)
@@ -78,7 +86,7 @@ def create_recording_task(db: Session, episode: Episode) -> Optional[Task]:
         status=TaskStatus.NOT_STARTED,
         assigned_to=episode.recording_engineer_id,
         due_date=due_date,
-        notes="Record the episode"
+        notes=_task_notes_with_episode("Record the episode", episode)
     )
     db.add(task)
     db.commit()
@@ -105,13 +113,14 @@ def create_editing_task(db: Session, episode: Episode) -> Optional[Task]:
     if episode.recording_date:
         due_date = episode.recording_date + timedelta(days=2)
     
+    base_notes = "Edit episode. Update to 'Sent to client' when sent; complete when client approves."
     task = Task(
         episode_id=episode.id,
         type=TaskType.EDITING,
         status=TaskStatus.NOT_STARTED,
         assigned_to=episode.editing_engineer_id,
         due_date=due_date,
-        notes="Edit episode. Update to 'Sent to client' when sent; complete when client approves."
+        notes=_task_notes_with_episode(base_notes, episode)
     )
     
     db.add(task)
@@ -139,13 +148,14 @@ def create_reels_task(db: Session, episode: Episode) -> Optional[Task]:
     if episode.recording_date:
         due_date = episode.recording_date + timedelta(days=2)
     
+    base_notes = episode.reels_notes or "Export reels from episode. Update to 'Sent to client' when sent; complete when client approves."
     task = Task(
         episode_id=episode.id,
         type=TaskType.REELS,
         status=TaskStatus.NOT_STARTED,
         assigned_to=episode.reels_engineer_id,
         due_date=due_date,
-        notes=episode.reels_notes or "Export reels from episode. Update to 'Sent to client' when sent; complete when client approves."
+        notes=_task_notes_with_episode(base_notes, episode)
     )
     
     db.add(task)
@@ -170,13 +180,14 @@ def create_publishing_task(db: Session, episode: Episode) -> Optional[Task]:
     
     # Only create if both are approved
     if episode.client_approved_editing == "approved" and episode.client_approved_reels == "approved":
+        base_notes = "Publish episode. Both editing and reels have been approved by client."
         task = Task(
             episode_id=episode.id,
             type=TaskType.PUBLISHING,
             status=TaskStatus.NOT_STARTED,
             assigned_to=None,  # Can be assigned later
             due_date=None,
-            notes="Publish episode. Both editing and reels have been approved by client."
+            notes=_task_notes_with_episode(base_notes, episode)
         )
         
         db.add(task)
