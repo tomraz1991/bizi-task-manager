@@ -180,7 +180,7 @@ services:
   api:
     build: ./backend
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/podcast_db
       - GOOGLE_CALENDAR_ENABLED=true
@@ -249,6 +249,7 @@ This creates a `dist/` folder with optimized production files.
 See **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)** for deploying both backend and frontend on Render (recommended).
 
 #### Other options: Nginx static hosting
+
 ```nginx
 server {
     listen 80;
@@ -294,6 +295,7 @@ GRANT ALL PRIVILEGES ON DATABASE podcast_db TO podcast_user;
 ```
 
 Update `.env`:
+
 ```bash
 DATABASE_URL=postgresql://podcast_user:secure_password@localhost:5432/podcast_db
 ```
@@ -301,6 +303,7 @@ DATABASE_URL=postgresql://podcast_user:secure_password@localhost:5432/podcast_db
 ### SQLite (Simple but Limited)
 
 For small deployments, SQLite works but has limitations:
+
 - No concurrent writes
 - File-based (backup considerations)
 - Not recommended for high traffic
@@ -340,6 +343,7 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
 ## Google Calendar Setup
 
 1. **Create Production Service Account:**
+
    - Go to Google Cloud Console
    - Create new project or use existing
    - Enable Google Calendar API
@@ -347,10 +351,12 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
    - Download JSON credentials
 
 2. **Share Calendar:**
+
    - Share production calendar with service account email
    - Grant "See all event details" permission
 
 3. **Store Credentials Securely:**
+
    ```bash
    # On server
    mkdir -p /home/podcastapp/podcast-task-manager/backend/credentials
@@ -359,13 +365,14 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
    ```
 
 4. **Set Up Scheduled Tasks:**
+
    ```bash
    # Add to crontab
    crontab -e
-   
+
    # Run daily workflow every morning at 8 AM
    0 8 * * * curl -X POST https://api.yourdomain.com/api/workflow/daily
-   
+
    # Sync calendar every 6 hours
    0 */6 * * * curl -X POST https://api.yourdomain.com/api/workflow/sync-calendar
    ```
@@ -373,23 +380,27 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api
 ## Security Considerations
 
 ### 1. Environment Variables
+
 - Never commit `.env` files
 - Use secrets management (AWS Secrets Manager, HashiCorp Vault, etc.)
 - Rotate credentials regularly
 
 ### 2. Database Security
+
 - Use strong passwords
 - Restrict database access to application server only
 - Enable SSL for database connections
 - Regular backups
 
 ### 3. API Security
+
 - Enable HTTPS only
 - Add rate limiting
 - Consider API authentication (JWT tokens)
 - Validate all inputs
 
 ### 4. File Permissions
+
 ```bash
 # Secure credentials
 chmod 600 credentials/google-service-account.json
@@ -400,6 +411,7 @@ chmod 755 /home/podcastapp/podcast-task-manager
 ```
 
 ### 5. Firewall
+
 ```bash
 # Allow only necessary ports
 sudo ufw allow 22/tcp   # SSH
@@ -411,15 +423,18 @@ sudo ufw enable
 ## Hosting Options
 
 ### Budget-Friendly
+
 - **DigitalOcean Droplet**: $6-12/month
 - **Linode**: $5-10/month
 - **Vultr**: $6-12/month
 
 ### Managed Services
+
 - **Render** (recommended): Backend + frontend; see [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md). Free tier available.
 - **Railway**, **Fly.io**: Alternative backends.
 
 ### Enterprise
+
 - **AWS**: EC2 + RDS + CloudFront
 - **Google Cloud**: Compute Engine + Cloud SQL
 - **Azure**: App Service + Database
@@ -446,6 +461,7 @@ logging.basicConfig(
 ### 2. Health Checks
 
 The API already has a health endpoint:
+
 ```bash
 curl https://api.yourdomain.com/api/health
 ```
@@ -453,6 +469,7 @@ curl https://api.yourdomain.com/api/health
 ### 3. Backups
 
 **Database Backups:**
+
 ```bash
 # PostgreSQL
 pg_dump -U podcast_user podcast_db > backup_$(date +%Y%m%d).sql
@@ -462,6 +479,7 @@ cp podcast_task_manager.db backup_$(date +%Y%m%d).db
 ```
 
 **Automated Backups:**
+
 ```bash
 # Add to crontab
 0 2 * * * pg_dump -U podcast_user podcast_db > /backups/db_$(date +\%Y\%m\%d).sql
@@ -534,18 +552,21 @@ npm run build
 ## Troubleshooting
 
 ### Backend won't start
+
 - Check logs: `sudo journalctl -u podcast-api -f`
 - Verify environment variables
 - Check database connection
 - Verify port availability
 
 ### Frontend can't connect to API
+
 - Check CORS settings
 - Verify API URL in frontend `.env`
 - Check network/firewall rules
 - Verify SSL certificates
 
 ### Google Calendar not working
+
 - Verify credentials file path
 - Check calendar sharing
 - Verify API is enabled
@@ -554,6 +575,7 @@ npm run build
 ## Support
 
 For issues or questions:
+
 1. Check logs first
 2. Review error messages
 3. Verify configuration

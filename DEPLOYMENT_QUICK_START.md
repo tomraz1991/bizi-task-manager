@@ -5,12 +5,14 @@
 ### 1. Backend (5 minutes)
 
 **Using Render (recommended):**
+
 1. Push code to GitHub
 2. Follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) to create backend and frontend
 3. Set environment variables in the Render dashboard
 4. Deploy
 
 **Using VPS:**
+
 ```bash
 # On server
 git clone <repo>
@@ -37,6 +39,7 @@ npm run build
 ### 3. Environment Variables
 
 **Backend `.env`:**
+
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/db
 GOOGLE_CALENDAR_ENABLED=true
@@ -45,6 +48,7 @@ CORS_ORIGINS=https://yourdomain.com
 ```
 
 **Frontend `.env.production`:**
+
 ```bash
 VITE_API_BASE_URL=https://api.yourdomain.com/api
 ```

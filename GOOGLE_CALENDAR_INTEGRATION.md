@@ -1,9 +1,11 @@
 # Google Calendar Integration Requirements
 
 ## Overview
+
 This document outlines what's needed to implement full Google Calendar integration for automatic episode discovery and task creation.
 
 ## What's Currently Implemented
+
 - ✅ Placeholder function that queries database for today's episodes
 - ✅ Workflow automation that creates tasks based on episodes
 - ✅ Database structure ready for calendar-synced episodes
@@ -13,6 +15,7 @@ This document outlines what's needed to implement full Google Calendar integrati
 ### 1. Python Dependencies
 
 Add to `backend/requirements.txt`:
+
 ```txt
 google-api-python-client==2.108.0
 google-auth-httplib2==0.1.1
@@ -20,6 +23,7 @@ google-auth-oauthlib==1.1.0
 ```
 
 Install with:
+
 ```bash
 cd backend
 ./venv/bin/pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
@@ -28,6 +32,7 @@ cd backend
 ### 2. Google Cloud Setup
 
 #### A. Create Google Cloud Project
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or use existing)
 3. Enable **Google Calendar API**:
@@ -36,9 +41,11 @@ cd backend
    - Click "Enable"
 
 #### B. Create OAuth 2.0 Credentials
+
 Choose one authentication method:
 
 **Option 1: Service Account (Recommended for Server-to-Server)**
+
 - Best for automated background jobs
 - No user interaction required
 - Navigate to "APIs & Services" > "Credentials"
@@ -47,6 +54,7 @@ Choose one authentication method:
 - Share calendar with service account email
 
 **Option 2: OAuth 2.0 Client ID (For User Authorization)**
+
 - Best if you need to access user's personal calendar
 - Requires user consent flow
 - Navigate to "APIs & Services" > "Credentials"
@@ -57,6 +65,7 @@ Choose one authentication method:
 ### 3. Environment Variables
 
 Add to `.env` or environment:
+
 ```bash
 # Google Calendar Configuration
 GOOGLE_CALENDAR_ID=primary  # or specific calendar ID
@@ -75,16 +84,19 @@ GOOGLE_CALENDAR_LOOKAHEAD_DAYS=7  # How many days ahead to sync
 Possible approaches:
 
 #### Option A: Event Title Pattern Matching
+
 - Parse event title for podcast name and episode number
 - Example: "רוני וברק - פרק 33" → Podcast: "רוני וברק", Episode: "33"
 - Requires consistent naming convention in calendar
 
 #### Option B: Event Description/Extended Properties
+
 - Store episode ID or podcast ID in event description or extended properties
 - More reliable but requires calendar events to be created with this metadata
 - Example: `episode_id: abc-123` in description
 
 #### Option C: Custom Event Fields
+
 - Use Google Calendar's extended properties to store:
   - `podcast_id`
   - `episode_number`
@@ -97,6 +109,7 @@ Possible approaches:
 ### 5. Event Data Extraction
 
 Need to extract from calendar events:
+
 - **Podcast Name**: From title or description
 - **Episode Number**: From title or description
 - **Recording Date/Time**: From event start time
@@ -108,6 +121,7 @@ Need to extract from calendar events:
 ### 6. Implementation Details Needed
 
 #### A. Authentication Function
+
 ```python
 def get_calendar_service():
     """Authenticate and return Google Calendar service object."""
@@ -116,6 +130,7 @@ def get_calendar_service():
 ```
 
 #### B. Event Query Function
+
 ```python
 def get_todays_events(service, calendar_id: str) -> List[Event]:
     """Query Google Calendar for today's events."""
@@ -124,6 +139,7 @@ def get_todays_events(service, calendar_id: str) -> List[Event]:
 ```
 
 #### C. Event Parsing Function
+
 ```python
 def parse_event_to_episode(event: Event, db: Session) -> Optional[Episode]:
     """Parse calendar event and create/update episode in database."""
@@ -134,6 +150,7 @@ def parse_event_to_episode(event: Event, db: Session) -> Optional[Episode]:
 ```
 
 #### D. Podcast Name Matching
+
 - How to match calendar event podcast name to database podcast?
 - Exact match? Fuzzy match? Create new if not found?
 - Handle Hebrew vs transliterated names?
@@ -141,21 +158,26 @@ def parse_event_to_episode(event: Event, db: Session) -> Optional[Episode]:
 ### 7. Configuration Questions
 
 **Please provide:**
+
 1. **Calendar ID**: Which Google Calendar should we read from?
+
    - Primary calendar?
    - Shared calendar?
    - Multiple calendars?
 
 2. **Event Naming Convention**: How are episodes named in calendar?
+
    - Format examples: "רוני וברק - פרק 33", "Recording: רוני וברק #33", etc.
    - Is there a consistent pattern?
 
 3. **Timezone**: What timezone are recording times in?
+
    - Calendar timezone?
    - Studio location timezone?
    - UTC?
 
 4. **Event Frequency**: How often should we sync?
+
    - Daily (morning)?
    - Real-time (webhook)?
    - On-demand (API call)?
@@ -190,6 +212,7 @@ Once you provide the information above, I can implement:
 ## Quick Start (Minimal Implementation)
 
 If you want a basic implementation now, I can create it with these assumptions:
+
 - Service account authentication
 - Read from primary calendar
 - Parse podcast name and episode number from event title
@@ -197,6 +220,7 @@ If you want a basic implementation now, I can create it with these assumptions:
 - Use event start time as recording_date
 
 **Would you like me to:**
+
 1. Implement the basic version with assumptions?
 2. Wait for you to provide the configuration details?
 3. Create a configurable version that you can customize?
@@ -212,6 +236,7 @@ If you want a basic implementation now, I can create it with these assumptions:
 ## Testing
 
 Will need:
+
 - Test Google Calendar with sample events
 - Test authentication flow
 - Test event parsing with various formats

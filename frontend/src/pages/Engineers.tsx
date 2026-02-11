@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { User, Calendar, CheckCircle2, Mic, Edit, Video } from 'lucide-react';
-import { getAllEngineersSummary, getEngineerEpisodes, getEngineerTasks, Episode } from '../api';
+import { User, Calendar, CheckCircle2, Mic, Edit, Video, Plus } from 'lucide-react';
+import { getAllEngineersSummary, getEngineerEpisodes, getEngineerTasks, createUser, Episode } from '../api';
 import { format } from 'date-fns';
 
 interface EngineerSummary {
@@ -24,6 +24,11 @@ export default function Engineers() {
   const [engineerTasks, setEngineerTasks] = useState<any[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newEngineerName, setNewEngineerName] = useState('');
+  const [newEngineerEmail, setNewEngineerEmail] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadEngineers();
@@ -98,10 +103,40 @@ export default function Engineers() {
 
   const selectedEngineerData = engineers.find(e => e.id === selectedEngineer);
 
+  const handleAddEngineer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEngineerName.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await createUser({ name: newEngineerName.trim(), email: newEngineerEmail.trim() || undefined });
+      loadEngineers();
+      setIsModalOpen(false);
+      setNewEngineerName('');
+      setNewEngineerEmail('');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to add engineer');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Engineers & Team</h2>
+        <button
+          onClick={() => {
+            setError(null);
+            setNewEngineerName('');
+            setNewEngineerEmail('');
+            setIsModalOpen(true);
+          }}
+          className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-xl shadow-lg shadow-primary-500/30 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 transition-all duration-200 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New Engineer
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -110,6 +145,9 @@ export default function Engineers() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Team Members</h3>
+              {engineers.length === 0 && !isModalOpen && (
+                <p className="text-sm text-gray-500 mb-3">No engineers yet. Add one to get started.</p>
+              )}
               <div className="space-y-2">
                 {engineers.map((engineer) => (
                   <button
@@ -358,6 +396,73 @@ export default function Engineers() {
           )}
         </div>
       </div>
+
+      {/* New Engineer Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-dark rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-gray-200/50">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200/50">
+              <h3 className="text-xl font-bold text-gray-900">Add Engineer</h3>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setError(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 rounded-lg p-1.5"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleAddEngineer} className="p-6 space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newEngineerName}
+                  onChange={(e) => setNewEngineerName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  placeholder="Engineer name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newEngineerEmail}
+                  onChange={(e) => setNewEngineerEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setError(null);
+                  }}
+                  className="px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving || !newEngineerName.trim()}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                >
+                  {saving ? 'Adding...' : 'Add Engineer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

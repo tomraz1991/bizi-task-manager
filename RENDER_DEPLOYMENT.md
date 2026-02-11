@@ -4,10 +4,10 @@ This guide walks you through deploying **both** the FastAPI backend and the Reac
 
 ## Overview
 
-| Service   | Type         | Root directory | Build / Start |
-|----------|--------------|----------------|----------------|
-| Backend  | Web Service  | `backend`      | Build: `pip install -r requirements.txt` → Start: `uvicorn main:app --host 0.0.0.0 --port $PORT` |
-| Frontend | Static Site  | `frontend`     | Build: `npm install && npm run build` → Publish: `dist` |
+| Service  | Type        | Root directory | Build / Start                                                                                    |
+| -------- | ----------- | -------------- | ------------------------------------------------------------------------------------------------ |
+| Backend  | Web Service | `backend`      | Build: `pip install -r requirements.txt` → Start: `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Frontend | Static Site | `frontend`     | Build: `npm install && npm run build` → Publish: `dist`                                          |
 
 You’ll deploy the **backend first**, then the **frontend** (so the frontend can point to the backend URL).
 
@@ -35,22 +35,22 @@ You’ll deploy the **backend first**, then the **frontend** (so the frontend ca
    - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 4. **Environment variables** (add in the Environment tab):
 
-   | Key             | Value / notes |
-   |-----------------|----------------|
-   | `PYTHON_VERSION` | `3.11.11` (avoids 3.13 build issues) |
-   | `DATABASE_URL`  | See [Step 2b](#step-2b-database) |
-   | `CORS_ORIGINS`  | **Required for frontend.** Set to your frontend URL exactly, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash). You can add this after the frontend is created; until then use `*` to allow all origins (then lock to your frontend URL in Step 4). |
+   | Key              | Value / notes                                                                                                                                                                                                                                                          |
+   | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `PYTHON_VERSION` | `3.11.11` (avoids 3.13 build issues)                                                                                                                                                                                                                                   |
+   | `DATABASE_URL`   | See [Step 2b](#step-2b-database)                                                                                                                                                                                                                                       |
+   | `CORS_ORIGINS`   | **Required for frontend.** Set to your frontend URL exactly, e.g. `https://podcast-task-manager.onrender.com` (no trailing slash). You can add this after the frontend is created; until then use `*` to allow all origins (then lock to your frontend URL in Step 4). |
 
    For Google Calendar (optional): see **[GOOGLE_CALENDAR_SETUP.md](GOOGLE_CALENDAR_SETUP.md)** for how to add the credentials JSON in production. Use either a **Secret File** (path `/etc/secrets/google-service-account.json`) and set `GOOGLE_CREDENTIALS_PATH` to that path, or set **`GOOGLE_CREDENTIALS_JSON`** to the full JSON string.
 
-   | Key                         | Value |
-   |-----------------------------|--------|
-   | `GOOGLE_CALENDAR_ENABLED`   | `true` |
-   | `GOOGLE_CALENDAR_ID`        | your calendar id |
-   | `GOOGLE_CREDENTIALS_PATH`   | `/etc/secrets/google-service-account.json` (if using Secret File) |
-   | or `GOOGLE_CREDENTIALS_JSON` | full JSON key as string (alternative) |
-   | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | service account email |
-   | `GOOGLE_CALENDAR_TIMEZONE`  | e.g. `Asia/Jerusalem` |
+   | Key                            | Value                                                             |
+   | ------------------------------ | ----------------------------------------------------------------- |
+   | `GOOGLE_CALENDAR_ENABLED`      | `true`                                                            |
+   | `GOOGLE_CALENDAR_ID`           | your calendar id                                                  |
+   | `GOOGLE_CREDENTIALS_PATH`      | `/etc/secrets/google-service-account.json` (if using Secret File) |
+   | or `GOOGLE_CREDENTIALS_JSON`   | full JSON key as string (alternative)                             |
+   | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | service account email                                             |
+   | `GOOGLE_CALENDAR_TIMEZONE`     | e.g. `Asia/Jerusalem`                                             |
 
 5. Click **Create Web Service**. Wait until the first deploy succeeds.
 6. Copy the service URL, e.g. `https://podcast-task-manager-api.onrender.com`. You’ll use this for the frontend and for `CORS_ORIGINS`.
@@ -88,17 +88,19 @@ If you need to run a migration (e.g. a script that adds a **new column** to an e
 1. In Render Dashboard, click **New** → **Static Site**.
 2. Connect the **same** repository.
 3. Configure:
+
    - **Name:** e.g. `podcast-task-manager`
    - **Root Directory:** `frontend`
    - **Build Command:** `npm install --registry https://registry.npmjs.org/ && npm run build`
    - **Publish Directory:** `dist`
 
    (Using `--registry https://registry.npmjs.org/` avoids E401 if your lockfile or environment pointed at a private npm/Nexus registry.)
+
 4. **Environment variable** (required so the app talks to your backend):
 
-   | Key                  | Value |
-   |----------------------|--------|
-   | `VITE_API_BASE_URL`  | Your backend URL; must end with `/api` (e.g. `https://podcast-task-manager-api.onrender.com/api`). If you set only the origin, the app will append `/api` for you. |
+   | Key                 | Value                                                                                                                                                              |
+   | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | `VITE_API_BASE_URL` | Your backend URL; must end with `/api` (e.g. `https://podcast-task-manager-api.onrender.com/api`). If you set only the origin, the app will append `/api` for you. |
 
    Replace with your actual backend URL from Step 2.
 
@@ -197,6 +199,7 @@ To **delete all data** in your Render PostgreSQL database (tables stay, data is 
    pip install -r requirements.txt
    DATABASE_URL="postgresql://user:pass@host/dbname" .venv/bin/python clear_db.py
    ```
+
    Use `.venv/bin/python` (or `python3` after activate) so the script runs with the venv that has the dependencies.
 
    Paste your actual External Database URL in place of `"postgresql://..."`.  
@@ -223,15 +226,15 @@ The Blueprint does not know the backend URL in advance, so `VITE_API_BASE_URL` m
 
 ## Troubleshooting
 
-| Issue | What to do |
-|-------|------------|
-| Backend build fails (Rust / maturin / read-only) | Set `PYTHON_VERSION=3.11.11` and ensure Root Directory is `backend`. |
-| **404 when refreshing** a route (e.g. /episodes) | Add a **Rewrite** in Render → Frontend → Redirects/Rewrites: Source `/*`, Destination `/index.html`, type Rewrite. See [Fix 404 when refreshing](#fix-404-when-refreshing-a-page-eg-episodes). |
-| **CORS error** / "No 'Access-Control-Allow-Origin' header" | Backend now allows any `https://*.onrender.com` origin. Redeploy the backend so the change is live. If you use a custom domain for the frontend, set `CORS_ORIGINS` on the backend to that URL (e.g. `https://bizi-task-manager-1.onrender.com`). |
-| **307 Temporary Redirect** then CORS | On free tier the backend can spin down; the first request may get a 307 from Render (no CORS headers). Wait a few seconds and refresh the page so the backend wakes up; the next request should succeed. |
-| API requests fail (network) | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api`. Backend allows `*.onrender.com` origins by default. |
-| **npm E401 / "Sonatype Nexus Repository Manager"** | Your `package-lock.json` had `resolved` URLs pointing at a private registry. The repo lockfile is now using the public registry. If you still see this, set **Build Command** to `npm install --registry https://registry.npmjs.org/ && npm run build`. |
-| Database empty / tables missing | The app creates tables on startup via `init_db()`. Ensure `DATABASE_URL` is set and the backend has started at least once. |
+| Issue                                                      | What to do                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend build fails (Rust / maturin / read-only)           | Set `PYTHON_VERSION=3.11.11` and ensure Root Directory is `backend`.                                                                                                                                                                                    |
+| **404 when refreshing** a route (e.g. /episodes)           | Add a **Rewrite** in Render → Frontend → Redirects/Rewrites: Source `/*`, Destination `/index.html`, type Rewrite. See [Fix 404 when refreshing](#fix-404-when-refreshing-a-page-eg-episodes).                                                          |
+| **CORS error** / "No 'Access-Control-Allow-Origin' header" | Backend now allows any `https://*.onrender.com` origin. Redeploy the backend so the change is live. If you use a custom domain for the frontend, set `CORS_ORIGINS` on the backend to that URL (e.g. `https://bizi-task-manager-1.onrender.com`).       |
+| **307 Temporary Redirect** then CORS                       | On free tier the backend can spin down; the first request may get a 307 from Render (no CORS headers). Wait a few seconds and refresh the page so the backend wakes up; the next request should succeed.                                                |
+| API requests fail (network)                                | Set `VITE_API_BASE_URL` to `https://<backend>.onrender.com/api`. Backend allows `*.onrender.com` origins by default.                                                                                                                                    |
+| **npm E401 / "Sonatype Nexus Repository Manager"**         | Your `package-lock.json` had `resolved` URLs pointing at a private registry. The repo lockfile is now using the public registry. If you still see this, set **Build Command** to `npm install --registry https://registry.npmjs.org/ && npm run build`. |
+| Database empty / tables missing                            | The app creates tables on startup via `init_db()`. Ensure `DATABASE_URL` is set and the backend has started at least once.                                                                                                                              |
 
 ---
 

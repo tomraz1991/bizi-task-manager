@@ -7,12 +7,14 @@ This document describes the automatic workflow system that creates and manages t
 ## Features
 
 ### 1. Daily Workflow Automation
+
 - **Google Calendar Integration**: Every morning, the system queries Google Calendar for today's episodes
 - **Studio Preparation Tasks**: Automatically creates studio preparation tasks for each episode scheduled today
 - **Task Assignment**: Tasks are assigned to the recording engineer for that episode
 - **Due Date**: Tasks are due 1 hour before the recording time
 
 ### 2. Automatic Task Creation
+
 Tasks are automatically created based on episode status:
 
 - **Studio Preparation**: Created when episode is scheduled for today (via daily workflow)
@@ -23,21 +25,25 @@ Tasks are automatically created based on episode status:
 ### 3. Task Completion Logic
 
 #### Studio Preparation Task
+
 - Automatically marked as done when:
   - Episode status changes to "recorded", OR
   - Task is manually marked as done
 
 #### Editing Task
+
 - Only marked as done when:
   - Client approval status is set to "approved"
 - If client rejects, task is reset to "in_progress"
 
 #### Reels Task
+
 - Only marked as done when:
   - Client approval status is set to "approved"
 - If client rejects, task is reset to "in_progress"
 
 #### Publishing Task
+
 - Created automatically when both editing and reels are approved
 - Can be manually completed
 
@@ -46,14 +52,17 @@ Tasks are automatically created based on episode status:
 ### New Fields
 
 #### Podcast Table
+
 - `default_studio_settings` (TEXT): Default studio setup for the podcast (e.g., "two mics, two cameras one in front of the other")
 
 #### Episode Table
+
 - `studio_settings_override` (TEXT): Override default studio settings for special episodes (e.g., "3 mics" for guest episodes)
 - `client_approved_editing` (TEXT): Client approval status for editing ("pending", "approved", "rejected")
 - `client_approved_reels` (TEXT): Client approval status for reels ("pending", "approved", "rejected")
 
 ### New Task Type
+
 - `STUDIO_PREPARATION`: Task for preparing the studio before recording
 
 ## Migration
@@ -70,11 +79,14 @@ cd backend
 ### Workflow Endpoints
 
 #### POST `/api/workflow/daily`
+
 Manually trigger the daily workflow process. This endpoint:
+
 - Queries Google Calendar for today's episodes
 - Creates studio preparation tasks for each episode
 
 **Response:**
+
 ```json
 {
   "message": "Daily workflow processed successfully",
@@ -84,9 +96,10 @@ Manually trigger the daily workflow process. This endpoint:
 
 ## Google Calendar Integration
 
-Currently, the Google Calendar integration queries the database for episodes with `recording_date` set to today. 
+Currently, the Google Calendar integration queries the database for episodes with `recording_date` set to today.
 
 **TODO for Production:**
+
 1. Implement actual Google Calendar API integration
 2. Authenticate with Google Calendar API
 3. Query calendar events for today
@@ -98,7 +111,8 @@ The placeholder implementation is in `backend/services/google_calendar.py`.
 ## UI Changes
 
 ### Episode Modal
-- **Studio Settings Section**: 
+
+- **Studio Settings Section**:
   - Shows default studio settings from the podcast (read-only)
   - Allows overriding settings for special episodes
 - **Client Approvals Section** (shown when episode status is "sent_to_client" or "in_editing"):
@@ -106,22 +120,26 @@ The placeholder implementation is in `backend/services/google_calendar.py`.
   - Reels approval dropdown (Pending/Approved/Rejected)
 
 ### Podcast Management
+
 - Podcasts can now have a `default_studio_settings` field that can be set when creating or updating a podcast
 
 ## Workflow Flow
 
 1. **Morning (Daily Workflow)**:
+
    - System queries Google Calendar for today's episodes
    - Creates studio preparation tasks for each episode
    - Tasks are due 1 hour before recording time
 
 2. **After Recording**:
+
    - When episode status changes to "recorded":
      - Studio preparation task is auto-completed
      - Editing task is created (due 2 days after recording)
      - Reels task is created (due 2 days after recording)
 
 3. **Client Review**:
+
    - When episode is sent to client:
      - Client can approve/reject editing
      - Client can approve/reject reels
@@ -135,21 +153,26 @@ The placeholder implementation is in `backend/services/google_calendar.py`.
 ## Setting Up Daily Workflow
 
 ### Option 1: Manual Trigger
+
 Call the API endpoint manually:
+
 ```bash
 curl -X POST http://localhost:8000/api/workflow/daily
 ```
 
 ### Option 2: Scheduled Job (Recommended)
+
 Set up a cron job or scheduled task to call the endpoint daily:
 
 **Cron Example:**
+
 ```bash
 # Run every day at 8 AM
 0 8 * * * curl -X POST http://localhost:8000/api/workflow/daily
 ```
 
 **Python Script Example:**
+
 ```python
 import schedule
 import time
@@ -169,11 +192,13 @@ while True:
 ## Testing
 
 1. **Test Studio Preparation Task Creation**:
+
    - Create an episode with `recording_date` set to today
    - Call `/api/workflow/daily`
    - Verify studio preparation task is created
 
 2. **Test Task Auto-Completion**:
+
    - Mark episode status as "recorded"
    - Verify studio preparation task is marked as done
    - Verify editing and reels tasks are created

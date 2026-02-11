@@ -78,65 +78,93 @@ def get_calendar_service():
         return None
 
 
-def parse_event_title(title: str) -> Dict[str, Optional[str]]:
+def parse_event_title(title: str) -> Dict[str, Any]:
     """
-    Parse calendar event title to extract podcast name and episode number.
+    Parse calendar event title to extract podcast name and episode number(s).
     
-    Supports multiple formats:
+    Supports single and multiple episodes per event, e.g.:
     - "רוני וברק - פרק 33"
-    - "Recording: רוני וברק #33"
-    - "רוני וברק פרק 33"
-    - "רוני וברק - 33"
+    - "Podcast - פרק 33 ו-34" / "Podcast - 33 & 34" / "Podcast 33, 34" / "Podcast 33-34"
     
-    Args:
-        title: Calendar event title
-        
     Returns:
-        Dictionary with 'podcast_name' and 'episode_number'
+        Dictionary with 'podcast_name', 'episode_number' (first or only), and 'episode_numbers' (list).
     """
-    result = {
+    result: Dict[str, Any] = {
         'podcast_name': None,
-        'episode_number': None
+        'episode_number': None,
+        'episode_numbers': [],
     }
     
     if not title:
         return result
     
-    # Try to extract episode number (various patterns)
-    episode_patterns = [
-        r'פרק\s*(\d+)',  # "פרק 33"
-        r'#(\d+)',        # "#33"
-        r'episode\s*(\d+)',  # "episode 33"
-        r'ep\s*(\d+)',   # "ep 33"
-        r'\s+(\d+)\s*$',  # "33" at end
-        r'[-–]\s*(\d+)',  # "- 33" or "– 33"
-    ]
+    # Collect all episode numbers (order preserved, unique)
+    seen: set = set()
+    episode_numbers: List[str] = []
     
-    episode_number = None
-    for pattern in episode_patterns:
-        match = re.search(pattern, title, re.IGNORECASE)
-        if match:
-            episode_number = match.group(1)
-            break
+    # Multi: "33 & 34", "33 and 34", "33, 34", "33 / 34"
+    for m in re.finditer(r'(\d+)\s*(?:&|and|,|/)\s*(\d+)', title, re.IGNORECASE):
+        for g in (m.group(1), m.group(2)):
+            if g not in seen:
+                seen.add(g)
+                episode_numbers.append(g)
+    # Range: "33-34" (two episodes)
+    for m in re.finditer(r'(\d+)\s*-\s*(\d+)', title):
+        low, high = int(m.group(1)), int(m.group(2))
+        if low <= high and (high - low) <= 10:  # sane range
+            for n in range(low, high + 1):
+                g = str(n)
+                if g not in seen:
+                    seen.add(g)
+                    episode_numbers.append(g)
+        elif low == high or (high - low) == 1:
+            for g in (m.group(1), m.group(2)):
+                if g not in seen:
+                    seen.add(g)
+                    episode_numbers.append(g)
+    # Hebrew "and": "פרק 33 ו-34" or "33 ו-34"
+    for m in re.finditer(r'(\d+)\s*ו-?\s*(\d+)', title):
+        for g in (m.group(1), m.group(2)):
+            if g not in seen:
+                seen.add(g)
+                episode_numbers.append(g)
+    # Explicit labels: "פרק 33", "#33", "episode 33", "ep 33"
+    for m in re.finditer(r'(?:פרק|#|episode|ep)\s*(\d+)', title, re.IGNORECASE):
+        g = m.group(1)
+        if g not in seen:
+            seen.add(g)
+            episode_numbers.append(g)
+    # Single at end: " - 33" or " 33"
+    if not episode_numbers:
+        for pattern in [r'[-–]\s*(\d+)\s*$', r'\s+(\d+)\s*$']:
+            match = re.search(pattern, title)
+            if match:
+                g = match.group(1)
+                if g not in seen:
+                    seen.add(g)
+                    episode_numbers.append(g)
+                break
     
-    # Extract podcast name (everything before episode number)
-    if episode_number:
-        # Remove episode number and separators
-        podcast_name = re.sub(
-            r'\s*(פרק|#|episode|ep)\s*\d+.*$',
-            '',
-            title,
-            flags=re.IGNORECASE
-        )
-        podcast_name = re.sub(r'[-–]\s*\d+.*$', '', podcast_name)
-        podcast_name = re.sub(r'\s+\d+\s*$', '', podcast_name)
-        podcast_name = podcast_name.strip()
+    # Podcast name: strip episode-number parts from title
+    if episode_numbers:
+        # Remove common episode-number suffixes (last occurrence and everything after)
+        name = title
+        for suf in [
+            r'\s*[-–]\s*\d+(\s*[&,/\-]\s*\d+)*\s*$',
+            r'\s+פרק\s+\d+(\s*ו-?\s*\d+)*\s*$',
+            r'\s*#\d+(\s*#\d+)*\s*$',
+            r'\s+episode\s+\d+.*$',
+            r'\s+ep\s+\d+.*$',
+            r'\s+\d+(\s*[&,/\-]\s*\d+)*\s*$',
+        ]:
+            name = re.sub(suf, '', name, flags=re.IGNORECASE)
+        podcast_name = name.strip()
     else:
-        # No episode number found, use entire title as podcast name
         podcast_name = title.strip()
     
     result['podcast_name'] = podcast_name if podcast_name else None
-    result['episode_number'] = episode_number
+    result['episode_numbers'] = episode_numbers
+    result['episode_number'] = episode_numbers[0] if episode_numbers else None
     
     return result
 
@@ -144,27 +172,30 @@ def parse_event_title(title: str) -> Dict[str, Optional[str]]:
 def extract_episode_data_from_event(event: Dict[str, Any]) -> Dict[str, Any]:
     """
     Extract episode data from Google Calendar event.
+    Supports multiple episode numbers per event (back-to-back recordings).
     
     Args:
         event: Google Calendar event object
         
     Returns:
-        Dictionary with episode data
+        Dictionary with episode data; 'episode_numbers' is a list (one per recording).
     """
-    data = {
+    data: Dict[str, Any] = {
         'podcast_name': None,
         'episode_number': None,
+        'episode_numbers': [],
         'recording_date': None,
         'studio': None,
         'guest_names': None,
         'notes': None,
     }
     
-    # Parse title
+    # Parse title (may contain multiple episode numbers)
     title = event.get('summary', '')
     parsed = parse_event_title(title)
     data['podcast_name'] = parsed['podcast_name']
-    data['episode_number'] = parsed['episode_number']
+    data['episode_number'] = parsed.get('episode_number')
+    data['episode_numbers'] = parsed.get('episode_numbers') or []
     
     # Extract recording date/time
     start = event.get('start', {})
@@ -457,11 +488,16 @@ def get_todays_episodes_from_calendar(db: Session) -> List[Episode]:
                     logger.info(f"Skipping event '{raw_title}' - no recognized podcast name or alias in title")
                     continue
                 
-                # Create or update episode
-                episode = create_or_update_episode_from_event(db, event_data, podcast)
-                if episode:
-                    episodes.append(episode)
-                    logger.info(f"Processed episode: {podcast.name} - {event_data.get('episode_number', 'N/A')}")
+                # One episode per episode number (back-to-back recordings in one event)
+                ep_nums = event_data.get('episode_numbers') or ([event_data['episode_number']] if event_data.get('episode_number') else [])
+                if not ep_nums:
+                    ep_nums = [None]  # no number: create/update one episode with no episode_number
+                for ep_num in ep_nums:
+                    ev = {**event_data, 'episode_number': ep_num}
+                    episode = create_or_update_episode_from_event(db, ev, podcast)
+                    if episode:
+                        episodes.append(episode)
+                        logger.info(f"Processed episode: {podcast.name} - {ep_num or 'N/A'}")
                 
             except Exception as e:
                 logger.error(f"Error processing calendar event {event.get('id')}: {e}", exc_info=True)
@@ -560,11 +596,16 @@ def sync_calendar_to_database(db: Session, days_ahead: Optional[int] = None) -> 
                     logger.debug(f"Skipping event - no recognized podcast in title: {raw_title}")
                     continue
                 
-                # Create or update episode
-                episode = create_or_update_episode_from_event(db, event_data, podcast)
-                if episode:
-                    synced_count += 1
-                
+                # One episode per episode number (back-to-back recordings in one event)
+                ep_nums = event_data.get('episode_numbers') or ([event_data['episode_number']] if event_data.get('episode_number') else [])
+                if not ep_nums:
+                    ep_nums = [None]
+                for ep_num in ep_nums:
+                    ev = {**event_data, 'episode_number': ep_num}
+                    episode = create_or_update_episode_from_event(db, ev, podcast)
+                    if episode:
+                        synced_count += 1
+            
             except Exception as e:
                 logger.error(f"Error syncing calendar event {event.get('id')}: {e}", exc_info=True)
                 continue
