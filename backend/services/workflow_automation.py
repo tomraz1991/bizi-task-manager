@@ -108,10 +108,10 @@ def create_editing_task(db: Session, episode: Episode) -> Optional[Task]:
     task = Task(
         episode_id=episode.id,
         type=TaskType.EDITING,
-        status=TaskStatus.SENT_TO_CLIENT,
+        status=TaskStatus.NOT_STARTED,
         assigned_to=episode.editing_engineer_id,
         due_date=due_date,
-        notes="Edit episode. Task will be marked complete when client approves."
+        notes="Edit episode. Update to 'Sent to client' when sent; complete when client approves."
     )
     
     db.add(task)
@@ -142,10 +142,10 @@ def create_reels_task(db: Session, episode: Episode) -> Optional[Task]:
     task = Task(
         episode_id=episode.id,
         type=TaskType.REELS,
-        status=TaskStatus.SENT_TO_CLIENT,
+        status=TaskStatus.NOT_STARTED,
         assigned_to=episode.reels_engineer_id,
         due_date=due_date,
-        notes=episode.reels_notes or "Export reels from episode. Task will be marked complete when client approves."
+        notes=episode.reels_notes or "Export reels from episode. Update to 'Sent to client' when sent; complete when client approves."
     )
     
     db.add(task)
